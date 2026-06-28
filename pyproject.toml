@@ -16,6 +16,7 @@ dependencies = [
 balancer-params = "balancer.params.robot_params:main"   # physical numbers / L
 balancer-design = "balancer.sim.lqr_design:main"         # compute K -> outputs/Kc_real.npy
 balancer-sim    = "balancer.sim.balance:main"            # live balancing viewer
+balancer-plant  = "balancer.sim.plant:main"              # print the generated contact-model XML
 
 [build-system]
 requires = ["hatchling"]
