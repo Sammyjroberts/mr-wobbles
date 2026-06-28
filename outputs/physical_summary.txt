@@ -1,0 +1,10 @@
+plate (from STL):   105.2 g   (82.9 cm^3 PETG)
+pole / body mass:   355.2 g
+cart (wheels):      110.0 g
+total mass:         465.2 g
+--> L (CoM above axle):   27.7 mm   (0.0277 m)
+breakdown (mass @ height above axle):
+    motors        200.0 g  @    0.0 mm
+    plate         105.2 g  @   50.7 mm
+    electronics    50.0 g  @   90.0 mm
+    battery         0.0 g  @  140.0 mm
