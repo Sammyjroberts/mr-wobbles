@@ -19,15 +19,13 @@ The controller is full-state feedback:   tau = -K . [x, pitch, x_dot, pitch_rate
     pitch_rate   : from the IMU gyro
 """
 import time
-from pathlib import Path
 
 import mujoco
 import numpy as np
 
 from balancer.params import robot_params as rp
 from balancer.sim.lqr_design import Q, R, compute_K
-
-XML_PATH = Path(__file__).parent / "balancer.xml"
+from balancer.sim.plant import plant_xml
 
 # ===== LQR gains =====
 # Designed at startup from the CURRENT real-robot params, via the same compute_K()
@@ -43,7 +41,7 @@ def design_gains():
     return K.flatten()
 
 CONFIG = {
-    "torque_limit":   0.31,  # N*m motor saturation (= your 3.2 kg*cm stall)
+    "torque_limit":   rp.MOTOR_STALL_TORQUE,  # N*m motor saturation (gearbox stall)
     # --- non-ideal knobs: raise toward real values, re-check it still settles ---
     "gyro_noise":     0.0,   # rad/s  (real MPU6050 ~0.01-0.03)
     "pitch_noise":    0.0,   # rad
@@ -81,7 +79,7 @@ def make_controller(cfg, K):
 
 
 def simulate(headless=False, seconds=None, controller_enabled=True, initial_pitch=0.05):
-    model = mujoco.MjModel.from_xml_path(str(XML_PATH))
+    model = mujoco.MjModel.from_xml_string(plant_xml())
     data = mujoco.MjData(model)
     mujoco.mj_resetData(model, data)
     data.qpos[3:7] = [np.cos(initial_pitch / 2), 0, np.sin(initial_pitch / 2), 0]

@@ -24,7 +24,7 @@ src/balancer/
   params/robot_params.py   # physical truth: derives mass/CoM/L from the STL + datasheet masses
   sim/lqr_design.py        # builds the linearized model from params, runs LQR -> K (gains)
   sim/balance.py           # real-time controller + MuJoCo viewer (u = -K . state)
-  sim/balancer.xml         # full wheels-on-ground contact model (validation plant)
+  sim/plant.py             # full wheels-on-ground contact model (validation plant), built from params
   paths.py                 # resolves the repo's data dirs (cad/, outputs/)
 cad/balancer_chassis_v1.stl   # the printable chassis plate (PETG, prints flat)
 cad/gen_chassis.py            # parametric generator for the plate
@@ -58,6 +58,7 @@ For Phase 1 (IMU-only), use just the pitch and pitch-rate gains; x / x_dot need 
 
 ## Notes / TODO
 - `M_WHEEL`, `M_ELECTRONICS` in `robot_params.py` are estimates — refine if you weigh them.
-- `balancer.xml` (contact model) currently holds the original assumed params; regenerate
-  it from `robot_params.py` to validate the real-parameter K on the contact plant.
+- The contact plant (`plant.py`) is generated from `robot_params.py`, so the validation
+  always reflects the real robot. Its pole inertia is lumped/approximate (mass + CoM height
+  are exact); refine to a distributed inertia if you want tighter validation.
 - `CONTROL_SIGN` in `balance.py`: flip if the motors drive into the fall instead of catching it.
