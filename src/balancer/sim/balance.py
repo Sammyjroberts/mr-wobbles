@@ -24,12 +24,23 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
+from balancer.params import robot_params as rp
+from balancer.sim.lqr_design import Q, R, compute_K
+
 XML_PATH = Path(__file__).parent / "balancer.xml"
 
-# ===== LQR gains (designed in lqr_design.py; re-run it if you change the robot) =====
-K_LQR = np.array([-3.255, -28.478, -3.690, -2.505])   # force gains on [x, pitch, vx, pitch_rate]
-WHEEL_RADIUS = 0.035        # m  -> maps cart force to wheel torque: tau = F * r
+# ===== LQR gains =====
+# Designed at startup from the CURRENT real-robot params, via the same compute_K()
+# that lqr_design uses — one producer of K, so the sim can never fly stale gains.
+WHEEL_RADIUS = rp.WHEEL_R   # m  -> maps cart force to wheel torque: tau = F * r
 CONTROL_SIGN = +1.0         # found during validation (flip if your real robot drives the wrong way)
+
+
+def design_gains():
+    """K (force gains on [x, pitch, vx, pitch_rate]) for the real robot, designed now."""
+    p = rp.assemble()
+    K, _ = compute_K(p["L"], p["pole_mass"], p["cart_mass"], Q, R)
+    return K.flatten()
 
 CONFIG = {
     "torque_limit":   0.31,  # N*m motor saturation (= your 3.2 kg*cm stall)
@@ -46,7 +57,7 @@ def pitch_from_quat(q):
     return np.arctan2(2 * (w * y - z * x), 1 - 2 * (y * y + x * x))
 
 
-def make_controller(cfg):
+def make_controller(cfg, K):
     buf = [0.0] * (cfg["ctrl_latency"] + 1)
     rng = np.random.default_rng(0)
 
@@ -57,7 +68,7 @@ def make_controller(cfg):
         pitch_rate= d.sensor("imu_gyro").data[1] + rng.normal(0, cfg["gyro_noise"])
 
         state = np.array([x, CONTROL_SIGN * pitch, x_dot, CONTROL_SIGN * pitch_rate])
-        force = -(K_LQR @ state)                      # LQR: desired cart force
+        force = -(K @ state)                          # LQR: desired cart force
         u = force * WHEEL_RADIUS * CONTROL_SIGN        # -> wheel torque
 
         if abs(u) < cfg["torque_deadband"]:
@@ -74,7 +85,9 @@ def simulate(headless=False, seconds=None, controller_enabled=True, initial_pitc
     data = mujoco.MjData(model)
     mujoco.mj_resetData(model, data)
     data.qpos[3:7] = [np.cos(initial_pitch / 2), 0, np.sin(initial_pitch / 2), 0]
-    control = make_controller(CONFIG)
+    K = design_gains()
+    print(f"flying K (cart force) = {np.round(K, 3)}")
+    control = make_controller(CONFIG, K)
 
     def step():
         u = control(data) if controller_enabled else 0.0
