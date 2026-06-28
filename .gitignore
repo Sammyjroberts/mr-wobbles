@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# uv / virtualenv
+.venv/
+.python-version
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Claude Code
+.claude/
+CLAUDE.md
+.claude.json
