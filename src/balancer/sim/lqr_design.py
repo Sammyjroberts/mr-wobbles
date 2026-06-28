@@ -9,7 +9,7 @@ import numpy as np
 from scipy.linalg import solve_discrete_are
 
 from balancer.params import robot_params as rp
-from balancer.paths import OUTPUTS_DIR
+from balancer.paths import KC_REAL_PATH
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -56,10 +56,9 @@ def main():
     print()
     print(f"OLD guess (L=92mm, pole=0.75): K = {np.round(K_old,3)}")
 
-    OUTPUTS_DIR.mkdir(exist_ok=True)
-    out = OUTPUTS_DIR / "Kc_real.npy"
-    np.save(out, K_real)
-    print(f"\nsaved {out}")
+    KC_REAL_PATH.parent.mkdir(exist_ok=True)
+    np.save(KC_REAL_PATH, K_real)
+    print(f"\nsaved {KC_REAL_PATH}")
 
 
 if __name__ == "__main__":

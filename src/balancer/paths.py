@@ -13,3 +13,4 @@ OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 HARDWARE_DIR = PROJECT_ROOT / "hardware"
 
 STL_PATH = CAD_DIR / "balancer_chassis_v1.stl"
+KC_REAL_PATH = OUTPUTS_DIR / "Kc_real.npy"
