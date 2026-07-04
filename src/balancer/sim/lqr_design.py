@@ -30,12 +30,29 @@ def design_xml(L, pole_mass, cart_mass):
 
 
 def compute_K(L, pole_mass, cart_mass, Q, R):
-    md = mujoco.MjModel.from_xml_string(design_xml(L, pole_mass, cart_mass))
-    dd = mujoco.MjData(md); mujoco.mj_resetData(md, dd); mujoco.mj_forward(md, dd)
-    nv = md.nv; A = np.zeros((2*nv, 2*nv)); B = np.zeros((2*nv, md.nu))
-    mujoco.mjd_transitionFD(md, dd, 1e-6, True, A, B, None, None)
+    # 1. BUILD the physics model from the XML description
+    model = mujoco.MjModel.from_xml_string(design_xml(L, pole_mass, cart_mass))
+
+    # 2. CREATE a data buffer and set the robot to its upright operating point
+    data = mujoco.MjData(model)
+    mujoco.mj_resetData(model, data)   # zero everything
+    mujoco.mj_forward(model, data)     # compute physics at that state
+
+    # 3. ALLOCATE empty A and B matrices of the right size
+    n_states = 2 * model.nv            # nv=2 dofs -> state is [x, θ, ẋ, θ̇] = 4
+    n_controls = model.nu              # one motor -> 1
+    A = np.zeros((n_states, n_states)) # 4x4
+    B = np.zeros((n_states, n_controls)) # 4x1
+
+    # 4. LINEARIZE: fill A and B by finite differences (nudge, step, measure)
+    mujoco.mjd_transitionFD(model, data, 1e-6, True, A, B, None, None)
+
+    # 5. SOLVE the Riccati equation -> P, the "cost-to-go" matrix
     P = solve_discrete_are(A, B, Q, R)
+
+    # 6. READ the optimal gains K off of P
     K = np.linalg.inv(B.T @ P @ B + R) @ (B.T @ P @ A)
+
     return K, np.linalg.eigvals(A)
 
 
