@@ -24,7 +24,7 @@ import numpy as np
 OUT_PATH = Path(__file__).parent / "balancer_chassis_v2.stl"
 
 # ---------------- plate ----------------
-W, H, T = 150.0, 180.0, 6.0          # width x height x thickness (mm)
+W, H, T = 150.0, 180.0, 4.0          # width x height x thickness (mm)
 base = trimesh.creation.box(extents=[W, H, T])
 
 tools = []
