@@ -4,7 +4,7 @@ A from-first-principles balancing robot: MuJoCo sim, LQR controller designed aga
 the *real* machine (parameters derived from the printed chassis + component datasheets),
 and an IMU-first hardware bring-up.
 
-## The key finding (why this repo exists)
+## The key finding
 The chassis plate is light and tall, but **two 100 g motors sit right on the wheel axle**,
 which drags the center of mass down. Derived from the actual STL + datasheets:
 
