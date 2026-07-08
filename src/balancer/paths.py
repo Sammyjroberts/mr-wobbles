@@ -1,4 +1,4 @@
-"""paths.py — resolve the repo's data directories from the installed package.
+"""paths.py - resolve the repo's data directories from the installed package.
 
 Code lives in src/balancer/; the data artifacts (printed STL, computed gains,
 summaries) live at the repo root. With an editable install (`uv sync`), the

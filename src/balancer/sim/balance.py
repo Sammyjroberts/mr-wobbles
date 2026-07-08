@@ -29,7 +29,7 @@ from balancer.sim.plant import plant_xml
 
 # ===== LQR gains =====
 # Designed at startup from the CURRENT real-robot params, via the same compute_K()
-# that lqr_design uses — one producer of K, so the sim can never fly stale gains.
+# that lqr_design uses - one producer of K, so the sim can never fly stale gains.
 WHEEL_RADIUS = rp.WHEEL_R   # m  -> maps cart force to wheel torque: tau = F * r
 CONTROL_SIGN = +1.0         # found during validation (flip if your real robot drives the wrong way)
 
