@@ -1,10 +1,13 @@
 # Mr. Wobbles: a self-balancing two-wheel robot
 
+[![validate](https://github.com/Sammyjroberts/mr-wobbles/actions/workflows/validate.yml/badge.svg)](https://github.com/Sammyjroberts/mr-wobbles/actions/workflows/validate.yml)
+
 ![Mr. Wobbles balancing in simulation, taking a shove and recovering](assets/balance.gif)
 
 *MuJoCo sim: the robot settles upright, takes a sideways shove at ~1.5 s, lunges ~27 cm to
-catch itself, and drives back to center. Peak tilt during recovery ~3.6°. The controller is
-the LQR designed in this repo; render it yourself with `scripts/record_gif.py`.*
+catch itself, and drives back to center. Peak tilt during recovery ~3°. The controller is
+the LQR designed in this repo, flying on the encoder + IMU signal path; render it yourself
+with `scripts/record_gif.py`.*
 
 An inverted-pendulum robot built from first principles: the controller isn't tuned by
 hand on the bench; it's **designed against the real machine**. Physical parameters are
@@ -26,15 +29,17 @@ and they drag the CoM down hard. Computed from the actual STL and datasheet mass
 
 | quantity                          | value    |
 |-----------------------------------|----------|
-| plate mass (from STL, PETG)       | 105 g    |
-| pole / body mass                  | 355 g    |
-| total mass                        | 465 g    |
-| **L, CoM height above the axle**  | **27.7 mm** |
+| plate mass (from STL, PETG)       | 134 g    |
+| pole / body mass                  | 384 g    |
+| total mass                        | 494 g    |
+| **L, CoM height above the axle**  | **29.3 mm** |
 
 A naive guess put L near 90 mm; this is **~3× shorter**. A low CoM means a short pendulum,
 which means a *fast-falling, twitchy* robot that demands a quicker control loop and leaves
 less margin. Concrete design takeaway baked into the params: **mount the battery high.**
-An 85 g LiPo up top raises L from 28 mm to ~49 mm and makes balancing far more forgiving.
+An 85 g LiPo up top raises L from 29 mm to ~49 mm and makes balancing far more forgiving.
+(These numbers regenerate from the STL via `uv run balancer-params`, which also rewrites
+`outputs/physical_summary.txt`, so they can't go stale against the printed chassis.)
 
 This is the whole point of deriving parameters instead of guessing them: the hard part of
 the problem was invisible until the numbers were real.
@@ -47,13 +52,18 @@ the problem was invisible until the numbers were real.
 robot_params.py   physical truth  →  mass, CoM, and L straight from the STL + datasheets
       │
       ├──────────────► lqr_design.py   linearize (finite-difference A, B) → Riccati → K
-      │                                    4 gains for state [x, ẋ, pitch, pitch_rate]
+      │                                    4 gains for state [x, pitch, ẋ, pitch_rate]
       │
       └──────────────► plant.py        generate the wheels-on-ground MuJoCo contact model
                                            from the *same* params (validation, not design)
                                         │
                              balance.py │  real-time loop: u = −K · state, live viewer
+                          evaluate.py   │  one rollout+metrics harness the tests + stats share
 ```
+
+State reaches the controller the way the real robot will read it: **pitch/pitch-rate from
+the IMU, position/velocity derived from the wheel encoders** (`x = wheel_angle · r`, not sim
+ground truth, so slip shows up in the loop, as it will on hardware).
 
 Two ideas do the heavy lifting:
 
@@ -69,26 +79,35 @@ Two ideas do the heavy lifting:
 
 ## Results (in simulation)
 
-Measured against the wheels-on-ground contact plant (`plant.py`), driven by the LQR from
-`lqr_design.py`. Every number below is regenerated live from the design, so the table can't
-drift from the code: `uv run python scripts/report_stats.py`.
+Measured against the wheels-on-ground contact plant (`plant.py`), flying the LQR from
+`lqr_design.py` on the encoder + IMU signal path. Every number below regenerates live from
+the design via the same harness the CI tests assert on, so the table, the gates, and the
+code can't drift apart: `uv run python scripts/report_stats.py`.
 
 | metric                         | value                          | reading |
 |--------------------------------|--------------------------------|---------|
 | open-loop unstable pole        | \|z\| = **1.049** (> 1)        | it genuinely wants to fall (gravity runaway) |
-| closed-loop poles              | \|z\| = 0.72, 0.98, 0.998      | all inside the unit circle → **stabilized** |
-| pitch recovery (from 3° tilt)  | back within 1° in **~0.1 s**   | the balancing loop is fast and aggressive |
-| disturbance rejection          | **2.2 N** shove, peak tilt **3.7°** | lunges ~28 cm to catch itself, then recovers |
-| position re-centering          | within ±10 mm in **~3.3 s**    | the slow mode (see note below) |
-| peak control effort            | **0.19 N·m** of 0.31 N·m stall | ~**40 % torque headroom**, motors are sized right |
+| closed-loop poles              | \|z\| = 0.72, 0.98, 0.998, 0.998 | all inside the unit circle → **stabilized** |
+| pitch recovery (from 3° tilt)  | back within 1° in **~0.07 s**  | the balancing loop is fast and aggressive |
+| position re-centering          | within ±10 mm in **~2.3 s**    | slower, soft position loop (by design) |
+| disturbance rejection          | **2.2 N** shove → peak tilt **3.0°**, lunge ~27 cm | catches it and recovers |
+| peak control effort            | **0.04 N·m** of 0.31 N·m stall | ~**88 % torque headroom** at ideal sensors |
+| encoder vs. true position      | tracks within **~2 mm** while balancing | the sim-to-real signal path is faithful |
 
-The GIF up top is exactly this: the 2.2 N shove and recovery.
+**The interesting finding: latency, not noise, is the enemy.** Sweeping to pessimistic
+hardware (0.02 rad/s gyro noise + 4 ms control latency + PWM deadband), the *same* 2.2 N shove
+drives peak tilt to **~19°** and momentarily **saturates the motors**, and isolating the knobs
+shows it's almost entirely the **4 ms of loop latency**, not the noise. That's the low-CoM
+finding cashing out: the pendulum is twitchy (fastest closed-loop mode ~6 ms), so a fast,
+low-latency control loop is a **hard Phase-2 firmware requirement**, not a nicety. It still
+recovers, but the ideal-sensor headroom is spent closing that gap.
 
-**Honest caveat:** the position loop is intentionally soft (low position weight in `Q`), so
-after re-centering a small sub-degree pitch ripple lingers before it's truly dead-still. That's
-a deliberate trade: a stiffer position gain fights the balance loop. Tightening it (retuning
-`Q` in `lqr_design.py`) is future work, and the kind of thing that only matters once it's on
-real hardware.
+**Phase-1 acceptance criterion.** With the IMU-only gains (no encoders, position feedback
+zeroed) it balances but **drifts ~28 cm over 9 s**: quantified wander, not a bug. That's the
+number to check the real robot against during Phase-1 bring-up: if it wanders faster than sim
+predicts, something else is wrong.
+
+The GIF up top is the ideal-sensor case: the 2.2 N shove and recovery.
 
 ---
 
@@ -99,9 +118,12 @@ Uses [uv](https://docs.astral.sh/uv/).
 ```bash
 uv sync                 # create the env + install deps
 
-uv run balancer-params  # print the physical numbers (mass, CoM, L)
-uv run balancer-design  # solve LQR → gains K → outputs/Kc_real.npy
+uv run balancer-params  # print physical numbers (mass, CoM, L); rewrite physical_summary.txt
+uv run balancer-design  # solve LQR → gains K → outputs/Kc_real.npy, Kc_phase1.npy
 uv run balancer-sim     # live balancing simulation (MuJoCo viewer)
+
+uv run python scripts/report_stats.py   # the Results numbers, live from the design
+uv run --group dev pytest               # the CI design gates (see below)
 ```
 
 The console scripts are thin wrappers around `python -m balancer.sim.balance`, etc.
@@ -113,33 +135,41 @@ The console scripts are thin wrappers around `python -m balancer.sim.balance`, e
 ```
 src/balancer/
   params/robot_params.py   physical truth: mass/CoM/L from the STL + datasheet masses
-  sim/lqr_design.py        linearized model → LQR → K (the gains)
-  sim/balance.py           real-time controller + MuJoCo viewer  (u = −K · state)
+  sim/lqr_design.py        linearize → LQR → K; mask_phase1() for the IMU-only gains
+  sim/balance.py           real-time controller + viewer (u = −K · state); encoder state, PHASE switch
   sim/plant.py             wheels-on-ground contact model, generated from params
+  sim/evaluate.py          one rollout + metrics harness (report_stats and tests both call it)
   paths.py                 resolves repo data dirs (cad/, outputs/)
+tests/test_design.py       CI gates: stable, torque headroom, golden gains, encoder tracks truth
+.github/workflows/         validate.yml, runs the gates on every push/PR
 cad/balancer_chassis_v2.stl   printable chassis plate (PETG, prints flat)
 cad/gen_chassis.py            parametric generator for the plate
 hardware/wiring_phase1.svg    Phase-1 wiring (balance on IMU, no encoders)
 hardware/chassis_drawing.svg  dimensioned plate drawing
 scripts/record_gif.py         renders assets/balance.gif from the sim
-scripts/report_stats.py       prints the Results table numbers, live from the design
-outputs/                      computed K, physical summary
+scripts/report_stats.py       prints the Results numbers, live from the design
+outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), physical_summary.txt
 ```
 
 ---
 
 ## Hardware roadmap
 
-- **Phase 1 (current):** Pico (USB) + TB6612 driver + 2 gearmotors + IMU (STEMMA QT).
-  Balances on the IMU alone, so expect drift and wander, since there's no position feedback.
-  Simplest wiring, no level shifter needed. See `hardware/wiring_phase1.svg`.
-  **Build status:** validated in sim; physical assembly is **blocked on a wheel-to-motor
-  adapter** (the 6 mm D-shaft to 70 mm scooter-wheel hub). Once it arrives, build + bring-up.
-- **Phase 2:** add wheel encoders for position hold. They run at 5 V and their outputs
-  exceed the Pico's 3.3 V limit, so this phase needs a **logic level shifter** (BSS138).
+- **Phase 1 (IMU only):** Pico (USB) + TB6612 driver + 2 gearmotors + IMU (STEMMA QT).
+  Balances on the IMU alone (gains in `outputs/Kc_phase1.npy`), so it drifts/wanders, with no
+  position feedback. Simplest wiring, no level shifter. See `hardware/wiring_phase1.svg`.
+- **Phase 2 (encoders):** wheel encoders for position hold, the validated flight config
+  (`outputs/Kc_real.npy`, full-state feedback). Encoders run at 5 V and exceed the Pico's
+  3.3 V limit, so this phase needs a **logic level shifter** (BSS138).
 - **Firmware:** on-robot control loop in **Rust + Embassy** on the RP2040: async tasks with
   a fixed-interval `Ticker`, I²C to the IMU, PWM + direction GPIO to the TB6612. It reads the
-  gains `K` produced by `balancer-design`. Designed, not yet built.
+  gains `K` produced by `balancer-design`. The latency finding above sets the bar: the loop
+  has to be fast. Designed, not yet built.
+
+**Build status:** validated in sim (Phase-2 encoder path is the default and is CI-gated).
+Physical assembly was blocked on a wheel-to-motor adapter (6 mm D-shaft → 70 mm scooter-wheel
+hub) and a level shifter; **both are now ordered and inbound.** On arrival: assemble, flash
+Phase-1 gains first, confirm the ~28 cm/9 s wander matches sim, then move to Phase-2 encoders.
 
 ---
 
@@ -147,9 +177,13 @@ outputs/                      computed K, physical summary
 
 - `M_WHEEL` and `M_ELECTRONICS` in `robot_params.py` are estimates; refine if you weigh the
   parts. The motors and plate dominate the CoM and are both known precisely.
-- `plant.py`'s pole inertia is lumped/approximate (mass and CoM height are exact); swap in a
-  distributed inertia for tighter validation.
-- `CONTROL_SIGN` in `balance.py`: flip it if the motors drive *into* the fall instead of
-  catching it; the usual first-run sign gotcha.
+- `plant.py`'s pole inertia is lumped/approximate (mass and CoM height are exact; wheel spin
+  inertia *is* modeled from the cylinder geoms); swap in a distributed pole inertia for tighter
+  validation.
+- `CONTROL_SIGN` / `ENC_SIGN` in `balance.py`: flip `CONTROL_SIGN` if the motors drive *into*
+  the fall; `ENC_SIGN` sets which wheel-rotation direction is forward (pinned by
+  `test_encoder_tracks_truth`). The usual first-run sign gotchas.
+- The Results numbers are the encoder-path, ideal-sensor case. Real hardware lives closer to
+  the realistic sweep, so budget for the latency finding.
 
 MIT licensed.
