@@ -10,7 +10,7 @@ Edit the masses you can actually weigh; the motors + plate dominate and are know
 import numpy as np
 import trimesh
 
-from balancer.paths import STL_PATH
+from balancer.paths import STL_PATH, PHYS_SUMMARY_PATH
 
 PETG_DENSITY = 1.27e-3        # g/mm^3  (1.27 g/cm^3)
 G = 9.81
@@ -66,16 +66,24 @@ def assemble():
                 breakdown=pole)
 
 
+def summarize(p):
+    lines = [
+        f"plate (from STL):  {p['plate_mass']*1000:6.1f} g   ({p['plate_vol_cm3']:.1f} cm^3 PETG)",
+        f"pole / body mass:  {p['pole_mass']*1000:6.1f} g",
+        f"cart (wheels):     {p['cart_mass']*1000:6.1f} g",
+        f"total mass:        {p['total_mass']*1000:6.1f} g",
+        f"--> L (CoM above axle): {p['L']*1000:6.1f} mm   ({p['L']:.4f} m)",
+        "breakdown (mass @ height above axle):",
+        *[f"    {name:12s} {m*1000:6.1f} g  @ {z*1000:6.1f} mm" for name, m, z in p["breakdown"]],
+    ]
+    return "\n".join(lines)
+
+
 def main():
-    p = assemble()
-    print(f"plate (from STL):  {p['plate_mass']*1000:6.1f} g   ({p['plate_vol_cm3']:.1f} cm^3 PETG)")
-    print(f"pole / body mass:  {p['pole_mass']*1000:6.1f} g")
-    print(f"cart (wheels):     {p['cart_mass']*1000:6.1f} g")
-    print(f"total mass:        {p['total_mass']*1000:6.1f} g")
-    print(f"--> L (CoM above axle): {p['L']*1000:6.1f} mm   ({p['L']:.4f} m)")
-    print("breakdown (mass @ height above axle):")
-    for name, m, z in p["breakdown"]:
-        print(f"    {name:12s} {m*1000:6.1f} g  @ {z*1000:6.1f} mm")
+    text = summarize(assemble())
+    print(text)
+    PHYS_SUMMARY_PATH.parent.mkdir(exist_ok=True)
+    PHYS_SUMMARY_PATH.write_text(text + "\n")   # regenerate the committed summary from code
 
 
 if __name__ == "__main__":

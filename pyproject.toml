@@ -20,6 +20,12 @@ balancer-design = "balancer.sim.lqr_design:main"         # compute K -> outputs/
 balancer-sim    = "balancer.sim.balance:main"            # live balancing viewer
 balancer-plant  = "balancer.sim.plant:main"              # print the generated contact-model XML
 
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

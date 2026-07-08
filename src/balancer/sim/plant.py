@@ -65,7 +65,10 @@ def plant_xml(p=None):
       <!-- IMU site: gyro/framequat are body-rigid, so its exact spot doesn't change the reading. -->
       <site name="imu" pos="0 0 {L:.6f}" size="0.005" rgba="0 1 0 1"/>
 
-      <!-- ===== LEFT WHEEL ===== (at +y) -->
+      <!-- ===== LEFT WHEEL ===== (at +y)
+           MuJoCo derives each wheel's rotational inertia from its cylinder geom + mass,
+           so wheel spin-up inertia IS modeled here (unlike the design cart-pole, where
+           the wheels enter only as translational cart mass - fine at this scale). -->
       <body name="left_wheel" pos="0 {half_track:.6f} 0">
         <joint name="left" type="hinge" axis="0 1 0"/>
         <geom name="left_tire" type="cylinder" size="{wheel_r:.6f} 0.0125" zaxis="0 1 0"

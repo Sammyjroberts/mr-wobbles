@@ -9,9 +9,25 @@ import numpy as np
 from scipy.linalg import solve_discrete_are
 
 from balancer.params import robot_params as rp
-from balancer.paths import KC_REAL_PATH
+from balancer.paths import KC_REAL_PATH, KC_PHASE1_PATH
 
 np.set_printoptions(precision=4, suppress=True)
+
+# state order everywhere: [x, pitch, x_dot, pitch_rate]
+IX, IPITCH, IVX, IPITCHRATE = 0, 1, 2, 3
+
+
+def mask_phase1(K):
+    """Phase-1 (IMU-only) gains: zero the position/velocity feedback.
+
+    Phase-1 hardware has no encoders, so x and x_dot don't exist - the robot can
+    only react to tilt. Zeroing those two gains on the optimal full-state K yields
+    exactly that controller: it holds pitch upright but lets position drift (it
+    will wander). That wander is the thing to measure, not a bug.
+    """
+    K = np.array(K, dtype=float).flatten().copy()
+    K[[IX, IVX]] = 0.0
+    return K
 
 
 def design_xml(L, pole_mass, cart_mass):
@@ -29,7 +45,13 @@ def design_xml(L, pole_mass, cart_mass):
 <actuator><motor joint="slide" gear="1"/></actuator></mujoco>"""
 
 
-def compute_K(L, pole_mass, cart_mass, Q, R):
+def linearize(L, pole_mass, cart_mass):
+    """Discrete-time (A, B) of the cart-pole at its upright operating point.
+
+    One place builds the model and finite-differences it; compute_K designs on
+    (A, B), and the test suite / report_stats read poles off the same (A, B) so
+    the docs and the CI gates can never disagree about the dynamics.
+    """
     # 1. BUILD the physics model from the XML description
     model = mujoco.MjModel.from_xml_string(design_xml(L, pole_mass, cart_mass))
 
@@ -46,11 +68,16 @@ def compute_K(L, pole_mass, cart_mass, Q, R):
 
     # 4. LINEARIZE: fill A and B by finite differences (nudge, step, measure)
     mujoco.mjd_transitionFD(model, data, 1e-6, True, A, B, None, None)
+    return A, B
 
-    # 5. SOLVE the Riccati equation -> P, the "cost-to-go" matrix
+
+def compute_K(L, pole_mass, cart_mass, Q, R):
+    A, B = linearize(L, pole_mass, cart_mass)
+
+    # SOLVE the Riccati equation -> P, the "cost-to-go" matrix
     P = solve_discrete_are(A, B, Q, R)
 
-    # 6. READ the optimal gains K off of P
+    # READ the optimal gains K off of P
     K = np.linalg.inv(B.T @ P @ B + R) @ (B.T @ P @ A)
 
     return K, np.linalg.eigvals(A)
@@ -73,9 +100,13 @@ def main():
     print()
     print(f"OLD guess (L=92mm, pole=0.75): K = {np.round(K_old,3)}")
 
+    K_phase1 = mask_phase1(K_real)
+    print(f"  Phase-1 (IMU-only) K = {np.round(K_phase1,3)}  (x, x_dot gains zeroed)")
+
     KC_REAL_PATH.parent.mkdir(exist_ok=True)
     np.save(KC_REAL_PATH, K_real)
-    print(f"\nsaved {KC_REAL_PATH}")
+    np.save(KC_PHASE1_PATH, K_phase1)
+    print(f"\nsaved {KC_REAL_PATH}\nsaved {KC_PHASE1_PATH}")
 
 
 if __name__ == "__main__":
