@@ -1,14 +1,14 @@
 """
-plant.py — the contact-model "plant" (the validation physics), built from robot_params.
+plant.py - the contact-model "plant" (the validation physics), built from robot_params.
 
-This is the full 3D, wheels-on-ground model the controller is VALIDATED against — as
+This is the full 3D, wheels-on-ground model the controller is VALIDATED against - as
 opposed to the clean cart-pole stand-in K is DESIGNED on (see lqr_design.design_xml).
 The two are deliberately different: you design on a clean model, then check the gains
 hold on a messier, contact-rich one.
 
 Generating it from robot_params means the validation plant always carries the real
 robot's mass + CoM height (L). It can't drift back to "phantom" params the way the old
-hand-written balancer.xml did — same single-source-of-truth fix we made for K.
+hand-written balancer.xml did - same single-source-of-truth fix we made for K.
 
 Coordinate convention (this is what the controller assumes):
     x = forward/back   (drive + the direction it falls)
@@ -24,7 +24,7 @@ from balancer.params import robot_params as rp
 def plant_xml(p=None):
     """Build the contact-model MJCF from assembled robot params (defaults to rp.assemble())."""
     p = p or rp.assemble()
-    L          = p["L"]              # CoM height above the axle (m) — sets the fall rate
+    L          = p["L"]              # CoM height above the axle (m) - sets the fall rate
     pole_mass  = p["pole_mass"]      # everything that tilts with the body (kg)
     wheel_mass = p["cart_mass"] / 2  # per wheel
     wheel_r    = p["wheel_r"]        # = axle height above floor
@@ -57,7 +57,7 @@ def plant_xml(p=None):
            center at z = L, the REAL CoM height above the axle (from robot_params). That
            mass + that height are what set the instability, and both are exact here.
            Collision is disabled (contype/conaffinity 0) so the body never spuriously
-           touches the floor at low L — only the wheels contact ground, like the real robot.
+           touches the floor at low L - only the wheels contact ground, like the real robot.
            Its inertia (box + parallel-axis) is approximate; the real plate is distributed. -->
       <geom name="body" type="box" pos="0 0 {L:.6f}" size="0.02 0.04 {body_h:.6f}"
             mass="{pole_mass:.6f}" contype="0" conaffinity="0" rgba="0.85 0.4 0.2 1"/>

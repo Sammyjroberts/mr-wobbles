@@ -1,5 +1,5 @@
 """
-robot_params.py  —  the physical truth of the real balancer.
+robot_params.py  -  the physical truth of the real balancer.
 
 Derives the chassis plate's mass/CoM straight from the printed STL, then assembles
 it with datasheet component masses to compute the ONE number that decides how hard
@@ -17,7 +17,7 @@ G = 9.81
 
 # ---------- component masses (kg) ----------
 M_MOTOR       = 0.100   # Pololu #4863 25D MP 12V 20.4:1 w/ 48 CPR encoder (datasheet ~0.10 kg)
-M_WHEEL       = 0.055   # 70 mm scooter wheel + 4 mm hub  (ESTIMATE — edit if you weigh it)
+M_WHEEL       = 0.055   # 70 mm scooter wheel + 4 mm hub  (ESTIMATE - edit if you weigh it)
 M_ELECTRONICS = 0.050   # Pico + TB6612 + IMU + breadboard + wiring  (ESTIMATE)
 M_BATTERY     = 0.000   # tethered now; set ~0.085 when a top LiPo is added
 

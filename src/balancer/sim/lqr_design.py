@@ -1,5 +1,5 @@
 """
-lqr_design.py  —  computes K for the REAL robot, using params derived from the STL.
+lqr_design.py  -  computes K for the REAL robot, using params derived from the STL.
 
 Pipeline: robot_params (STL + datasheets) -> linearized cart-pole model (A,B)
 -> LQR cost (Q,R) -> Riccati -> K (four gains). Runs once, offline.

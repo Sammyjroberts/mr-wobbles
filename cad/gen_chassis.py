@@ -1,5 +1,5 @@
 """
-gen_chassis_v2.py — wider balancing-robot backplate.
+gen_chassis_v2.py - wider balancing-robot backplate.
 
 Changes from v1:
   * WIDTH 80 -> 150 mm  so the two 65 mm (Pololu #4863 25Dx65L) motors sit
