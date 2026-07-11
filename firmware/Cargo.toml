@@ -1,0 +1,60 @@
+[package]
+name = "wobbles"
+version = "0.1.0"
+edition = "2021"
+
+# Two independently-flashable bring-up binaries live in src/bin/:
+#   src/bin/imu_test.rs    -> `cargo run --bin imu_test`
+#   src/bin/motor_test.rs  -> `cargo run --bin motor_test`
+# There is intentionally no default binary (no src/main.rs), so you must
+# always pass --bin.
+
+[dependencies]
+# --- Embassy (versions matched to the known-good pico-blinky project) ---
+embassy-executor = { version = "0.9", features = [
+    "arch-cortex-m",
+    "executor-thread",
+    "defmt",
+] }
+embassy-time = { version = "0.5", features = [
+    "defmt",
+    "defmt-timestamp-uptime",
+] }
+embassy-rp = { version = "0.9", features = [
+    "defmt",
+    "unstable-pac",
+    "time-driver",
+    "critical-section-impl",
+    "rp235xa",       # Raspberry Pi Pico 2 W = RP2350A
+    "rt",
+] }
+embassy-sync = "0.8"
+embassy-futures = "0.1"
+
+# --- Logging over RTT via the debug probe ---
+defmt = "1.0"
+defmt-rtt = "1.0"
+panic-probe = { version = "1.0", features = ["print-defmt"] }
+
+# --- Cortex-M runtime ---
+cortex-m = { version = "0.7", features = ["inline-asm"] }
+cortex-m-rt = "0.7"
+
+# --- Talking to the LSM6DSOX at the register level ---
+# We drive the sensor's registers directly over embedded-hal-async I2C rather
+# than pulling in a driver crate: it keeps the async story clean with
+# embassy-rp, and the register map we need (WHO_AM_I + a burst read) is tiny.
+embedded-hal-async = "1.0"
+
+# no_std float math: atan2f / sqrtf for the pitch computation.
+libm = "0.2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+debug = 2       # keep DWARF so defmt logs show file:line (no flash cost; debug info is stripped from the image)
+
+# A debug build flashes fine too, but keeping debug lightly optimized makes the
+# 50 Hz / 20 kHz timing behave more like release while you iterate.
+[profile.dev]
+opt-level = 1
