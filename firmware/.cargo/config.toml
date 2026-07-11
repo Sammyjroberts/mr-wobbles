@@ -1,0 +1,21 @@
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[env]
+# defmt filters at COMPILE time; without this it defaults to error-only and you
+# see none of the info!/warn! telemetry. "trace" = show everything. Dial down to
+# "info" once bring-up is done (per-crate syntax also works, e.g. "info,wobbles=trace").
+DEFMT_LOG = "trace"
+
+[target.thumbv8m.main-none-eabihf]
+# `cargo run` flashes the ELF and then streams defmt/RTT logs.
+runner = "probe-rs run --chip RP235x"
+
+rustflags = [
+    "-C",
+    "link-arg=--nmagic",
+    "-C",
+    "link-arg=-Tlink.x",
+    "-C",
+    "link-arg=-Tdefmt.x",
+]
