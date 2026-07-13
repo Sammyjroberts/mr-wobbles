@@ -11,7 +11,7 @@ with `scripts/record_gif.py`.*
 
 [![Mr. Wobbles balancing on the bench](https://img.youtube.com/vi/HPvMnAkXYeM/hqdefault.jpg)](https://youtu.be/HPvMnAkXYeM)
 
-*The real robot. ▶ [Watch on YouTube](https://youtu.be/HPvMnAkXYeM)*
+*The real robot.* ▶ <a href="https://youtu.be/HPvMnAkXYeM" target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
 
 An inverted-pendulum robot built from first principles: the controller isn't tuned by
 hand on the bench; it's **designed against the real machine**. Physical parameters are
