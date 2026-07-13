@@ -36,6 +36,7 @@ use embassy_rp::gpio::{Level, Output};
 use embassy_rp::i2c::{self, I2c};
 use embassy_rp::peripherals::I2C0;
 use embassy_rp::pwm::{Config as PwmConfig, Pwm};
+use embassy_rp::watchdog::Watchdog;
 use embassy_time::{Duration, Ticker, Timer};
 use embedded_hal_async::i2c::I2c as _;
 use {defmt_rtt as _, panic_probe as _};
@@ -81,7 +82,7 @@ const ALPHA: f32 = 0.99; // complementary filter, retuned for 500 Hz (~0.2 s tim
 const ARM_ANGLE_DEG: f32 = 4.0; // within this of upright to arm
 const ARM_HOLD_CYCLES: u32 = (LOOP_HZ as u32) / 2; // ...held ~0.5 s
 const FALL_ANGLE_DEG: f32 = 30.0; // past this = fallen -> disarm
-const MAX_DUTY: f32 = 0.30; // gentle cap while verifying the catch direction; raise toward 0.85 once stable
+const MAX_DUTY: f32 = 0.60; // raised from 0.30 after the gyro-sign fix — it was saturating 39% of the time
 const DEADBAND_DUTY: f32 = 0.12; // feedforward past motor stiction so small corrections still move the wheels (tune to your motors)
 const CONTROL_DEADZONE: f32 = 0.04; // below this duty = coast (ignore sensor noise near upright, don't buzz the wheels)
 const DEG2RAD: f32 = core::f32::consts::PI / 180.0;
@@ -164,6 +165,14 @@ async fn main(_spawner: Spawner) {
         K_PITCH, K_PITCH_RATE, imu_map::DRIVE_SIGN, MOTOR_A_SIGN, MOTOR_B_SIGN
     );
 
+    // --- Watchdog: auto-recover from a crash ---
+    // If the control loop ever hangs, panics, or HardFaults, it stops feeding this
+    // timer and the RP2350 resets itself — rebooting straight back into balancing
+    // from flash instead of parking dead. Started after IMU bring-up so the WHO_AM_I
+    // retry loop can't trip it; fed at the top of every control cycle (2 ms).
+    let mut watchdog = Watchdog::new(p.WATCHDOG);
+    watchdog.start(Duration::from_millis(500));
+
     // --- Seed the complementary filter from the accelerometer ---
     let (ax, ay, az, _, _, _) = read_all(&mut i2c).await;
     let mut pitch = imu_map::pitch_deg(ax, ay, az); // deg
@@ -178,6 +187,7 @@ async fn main(_spawner: Spawner) {
 
     loop {
         ticker.next().await;
+        watchdog.feed(); // pet the watchdog; a hang past 500 ms resets & reboots
         let (ax, ay, az, gx, gy, gz) = read_all(&mut i2c).await;
 
         // --- Pitch: complementary filter (deg), + gyro pitch rate (deg/s) ---

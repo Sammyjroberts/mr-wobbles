@@ -41,10 +41,15 @@ pub struct MappedAxis {
 // gravity into IMU Z; IMU Y is the wheel axle. So:
 //   robot FORWARD =  -IMU_Z     (tip forward -> az goes negative -> want +fwd)
 //   robot UP      =  -IMU_X     (upright ax=-1g -> want +up)
-//   robot AXLE    =   IMU_Y     (pitch-rate gyro axis; sign confirmed below)
+//   robot AXLE    =   IMU_Y     (pitch-rate gyro axis)
+// AXLE sign CORRECTED 2026-07-12: the gyro rate was sign-inverted vs the true
+// angular velocity (measured corr -0.66 with d(raw pitch)/dt on live telemetry).
+// That broke the complementary filter (estimate diverged opposite to reality)
+// AND made the D-term anti-damping — the root cause of the limit cycle. Flipped
+// -1.0 -> +1.0; after the fix the robot self-balances. (FWD/UP are accel-only.)
 pub const ROBOT_FWD: MappedAxis = MappedAxis { src: ImuAxis::Z, sign: -1.0 };
 pub const ROBOT_UP: MappedAxis = MappedAxis { src: ImuAxis::X, sign: -1.0 };
-pub const ROBOT_AXLE: MappedAxis = MappedAxis { src: ImuAxis::Y, sign: -1.0 };
+pub const ROBOT_AXLE: MappedAxis = MappedAxis { src: ImuAxis::Y, sign: 1.0 };
 
 /// Fine trim (deg): subtracted from pitch so a *true* upright reads exactly 0.
 /// Set this to whatever `pitch` shows when you hold the robot dead upright.
