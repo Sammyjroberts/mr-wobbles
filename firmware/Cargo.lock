@@ -669,7 +669,7 @@ checksum = "c39754e157331b013978ec91992bde1ac089843443c49cbc7f46150b0fad0893"
 [[package]]
 name = "gantry-tlm"
 version = "0.1.0"
-source = "git+https://github.com/Sammyjroberts/gantry.git#235a5c5e6b7e6a9752f9e0d7908ebbb780139d1f"
+source = "git+https://github.com/Sammyjroberts/gantry.git#b32cb23dae20502d056942c339e1795342e01905"
 dependencies = [
  "critical-section",
  "gantry-tlm-derive",
@@ -679,7 +679,7 @@ dependencies = [
 [[package]]
 name = "gantry-tlm-derive"
 version = "0.1.0"
-source = "git+https://github.com/Sammyjroberts/gantry.git#235a5c5e6b7e6a9752f9e0d7908ebbb780139d1f"
+source = "git+https://github.com/Sammyjroberts/gantry.git#b32cb23dae20502d056942c339e1795342e01905"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -689,7 +689,7 @@ dependencies = [
 [[package]]
 name = "gantry-wire"
 version = "0.1.0"
-source = "git+https://github.com/Sammyjroberts/gantry.git#235a5c5e6b7e6a9752f9e0d7908ebbb780139d1f"
+source = "git+https://github.com/Sammyjroberts/gantry.git#b32cb23dae20502d056942c339e1795342e01905"
 
 [[package]]
 name = "generic-array"
