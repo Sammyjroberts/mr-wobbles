@@ -9,6 +9,10 @@ catch itself, and drives back to center. Peak tilt during recovery ~3°. The con
 the LQR designed in this repo, flying on the encoder + IMU signal path; render it yourself
 with `scripts/record_gif.py`.*
 
+[![Mr. Wobbles balancing on the bench](https://img.youtube.com/vi/HPvMnAkXYeM/hqdefault.jpg)](https://youtu.be/HPvMnAkXYeM)
+
+*The real robot. ▶ [Watch on YouTube](https://youtu.be/HPvMnAkXYeM)*
+
 An inverted-pendulum robot built from first principles: the controller isn't tuned by
 hand on the bench; it's **designed against the real machine**. Physical parameters are
 derived from the printed chassis (mass and center of mass pulled straight from the STL)
@@ -17,7 +21,8 @@ is solved offline. The same parameters generate the MuJoCo validation plant, so 
 and the design can never silently disagree.
 
 Python does the physics and control design; the on-robot firmware (Rust + Embassy on an
-RP2040) is the next phase and consumes the gains this repo produces.
+RP2350 / Pico 2 W) balances the real robot and consumes the gains this repo produces — see
+`firmware/`.
 
 ---
 
@@ -161,15 +166,14 @@ outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), ph
 - **Phase 2 (encoders):** wheel encoders for position hold, the validated flight config
   (`outputs/Kc_real.npy`, full-state feedback). Encoders run at 5 V and exceed the Pico's
   3.3 V limit, so this phase needs a **logic level shifter** (BSS138).
-- **Firmware:** on-robot control loop in **Rust + Embassy** on the RP2040: async tasks with
-  a fixed-interval `Ticker`, I²C to the IMU, PWM + direction GPIO to the TB6612. It reads the
-  gains `K` produced by `balancer-design`. The latency finding above sets the bar: the loop
-  has to be fast. Designed, not yet built.
+- **Firmware:** on-robot control loop in **Rust + Embassy** on the RP2350 (Pico 2 W): async
+  tasks with a fixed-interval `Ticker` (500 Hz), I²C to the IMU, PWM + direction GPIO to the
+  TB6612, and a hardware watchdog for crash recovery. Reads the gains `K` produced by
+  `balancer-design`. Built and running — see `firmware/`.
 
-**Build status:** validated in sim (Phase-2 encoder path is the default and is CI-gated).
-Physical assembly was blocked on a wheel-to-motor adapter (6 mm D-shaft → 70 mm scooter-wheel
-hub) and a level shifter; **both are now ordered and inbound.** On arrival: assemble, flash
-Phase-1 gains first, confirm the ~28 cm/9 s wander matches sim, then move to Phase-2 encoders.
+**Build status:** assembled and **self-balancing on real hardware** (Phase 1, IMU-only) — see
+the clip up top. Also validated in sim (the Phase-2 encoder path is the default and is
+CI-gated). Next up: wheel encoders for Phase-2 position hold (`outputs/Kc_real.npy`).
 
 ---
 
