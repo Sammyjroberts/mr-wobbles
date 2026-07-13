@@ -31,6 +31,19 @@ embassy-rp = { version = "0.9", features = [
 embassy-sync = "0.8"
 embassy-futures = "0.1"
 
+# --- Gantry telemetry (opt-in via `--features telemetry`; OFF by default) ---
+# Path dep for now; becomes a git/registry dep once the SDK is tagged. The relative
+# path resolves firmware/ -> mr-wobbles/ -> WebstormProjects/ -> Sammy/ -> ai/gantry/...
+# (verified). Swap to `path = "C:/Users/Sammy/ai/gantry/sdk/gantry-tlm"` if the tree moves.
+# `default-features = false` keeps it no_std (the crate's own default is already empty).
+gantry-tlm = { path = "../../../ai/gantry/sdk/gantry-tlm", default-features = false, optional = true }
+# USB-CDC transport for telemetry; the rp235x USB peripheral driver itself comes from
+# embassy-rp's `usb` module. embassy-usb 0.5 pairs with embassy-usb-driver 0.2 (the same
+# version embassy-rp 0.9 already pulls). Feature-gated so no USB code in the plain build.
+embassy-usb = { version = "0.5", features = ["defmt"], optional = true }
+# `&'static mut` descriptor/control buffers for the USB builder, safely from statics.
+static_cell = { version = "2", optional = true }
+
 # --- Logging over RTT via the debug probe ---
 defmt = "1.0"
 defmt-rtt = "1.0"
@@ -48,6 +61,12 @@ embedded-hal-async = "1.0"
 
 # no_std float math: atan2f / sqrtf for the pitch computation.
 libm = "0.2"
+
+[features]
+# OFF by default: without it, gantry-tlm/embassy-usb/static-cell are not compiled at all,
+# `#[derive(Telemetry)]` expands to nothing, and send/drain are inert. Identical binary.
+# `gantry-tlm/enabled` strongly enables the optional gantry-tlm dep AND its machinery.
+telemetry = ["gantry-tlm/enabled", "dep:embassy-usb", "dep:static_cell"]
 
 [profile.release]
 opt-level = "s"
