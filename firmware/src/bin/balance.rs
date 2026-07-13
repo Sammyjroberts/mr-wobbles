@@ -43,12 +43,23 @@ use {defmt_rtt as _, panic_probe as _};
 #[path = "../imu_map.rs"]
 mod imu_map;
 
+// Gantry telemetry: opt-in, fully compiled out without `--features telemetry`.
+#[cfg(feature = "telemetry")]
+#[path = "../telemetry.rs"]
+mod telemetry;
+
 #[link_section = ".start_block"]
 #[used]
 static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
 
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => i2c::InterruptHandler<I2C0>;
+});
+
+// Separate binding for the USB peripheral, only when telemetry is enabled.
+#[cfg(feature = "telemetry")]
+bind_interrupts!(struct UsbIrqs {
+    USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<embassy_rp::peripherals::USB>;
 });
 
 // ===================== Controller (Phase 1, IMU-only) =====================
@@ -111,6 +122,15 @@ async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     info!("balance: booting (Phase 1, IMU-only)");
 
+    // --- Gantry telemetry: init pipeline + spawn the USB-CDC drain task (feature-gated) ---
+    #[cfg(feature = "telemetry")]
+    {
+        telemetry::init();
+        let usb_driver = embassy_rp::usb::Driver::new(p.USB, UsbIrqs);
+        _spawner.must_spawn(telemetry::telemetry_usb_task(usb_driver));
+        info!("telemetry: gantry-tlm up, USB-CDC streaming as \"gantry-tlm\"");
+    }
+
     // --- Motors: start fully disabled (STBY low, all pins low, 0 duty) ---
     let mut stby = Output::new(p.PIN_22, Level::Low);
     let mut ain1 = Output::new(p.PIN_18, Level::Low);
@@ -151,6 +171,9 @@ async fn main(_spawner: Spawner) {
     let mut armed = false;
     let mut upright_cycles: u32 = 0;
     let mut log_div: u32 = 0;
+    // Telemetry decimator: the loop runs at 500 Hz; stream at ~50 Hz (every 10th cycle).
+    #[cfg(feature = "telemetry")]
+    let mut tlm_div: u32 = 0;
     let mut ticker = Ticker::every(Duration::from_hz(LOOP_HZ));
 
     loop {
@@ -161,6 +184,13 @@ async fn main(_spawner: Spawner) {
         let pitch_acc = imu_map::pitch_deg(ax, ay, az);
         let pitch_rate = imu_map::pitch_rate_dps(gx, gy, gz);
         pitch = ALPHA * (pitch + pitch_rate * DT) + (1.0 - ALPHA) * pitch_acc;
+
+        // Telemetry mirrors of the controller outputs (stay 0 while disarmed). cfg-gated so
+        // the plain build is byte-identical — these lines don't exist without the feature.
+        #[cfg(feature = "telemetry")]
+        let mut tlm_force = 0.0f32;
+        #[cfg(feature = "telemetry")]
+        let mut tlm_duty = 0.0f32;
 
         // --- Arm / disarm state machine ---
         let upright = pitch.abs() < ARM_ANGLE_DEG;
@@ -213,6 +243,13 @@ async fn main(_spawner: Spawner) {
             pwm_cfg.compare_b = drive(duty * MOTOR_B_SIGN, &mut bin1, &mut bin2);
             pwm.set_config(&pwm_cfg);
 
+            // Capture the commanded force/duty for telemetry (send happens below).
+            #[cfg(feature = "telemetry")]
+            {
+                tlm_force = force;
+                tlm_duty = duty;
+            }
+
             log_div += 1;
             if log_div >= LOOP_HZ as u32 / 20 {
                 // ~20 Hz
@@ -225,6 +262,18 @@ async fn main(_spawner: Spawner) {
             if log_div >= LOOP_HZ as u32 {
                 log_div = 0;
                 info!("disarmed, waiting for upright. pitch={=f32}deg", pitch);
+            }
+        }
+
+        // --- Telemetry: stream at ~50 Hz (decimated from the 500 Hz loop) ---
+        #[cfg(feature = "telemetry")]
+        {
+            tlm_div += 1;
+            if tlm_div >= LOOP_HZ as u32 / 50 {
+                tlm_div = 0;
+                telemetry::send_imu(pitch, pitch_rate);
+                telemetry::send_drive(tlm_duty * MOTOR_A_SIGN, tlm_duty * MOTOR_B_SIGN);
+                telemetry::send_balance(tlm_force, armed);
             }
         }
     }
