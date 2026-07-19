@@ -1,29 +1,22 @@
 """
-gen_chassis.py  -  v3: an ENCLOSED box chassis for Mr. Wobbles.
+gen_chassis.py  -  v4: a friendly BARREL-on-legs chassis for Mr. Wobbles.
 
-v1/v2 were a single flat backplate with everything zip-tied to the open face.
-v3 is the "normal" self-balancing-robot shape people picture: a closed box that
-holds the electronics, riding up high on two wheels.
+The look people picture for a cute balancer (and the reference the design targets):
+a horizontal barrel BODY with a little face on the front, held up off the ground by
+two splayed legs that carry the gearmotors + wheels at the bottom.
 
-  * A 4-walled box (open top, + a separate snap-on lid) is the BODY. The Pico,
-    TB6612 driver and IMU seat on standoffs on the box floor; the battery straps
-    high against the inside of the back wall.
-  * The two 25Dx65L gearmotors thread through circular bores in four bulkhead
-    plates that hang UNDER the box floor, so the wheels sit at the bottom, out
-    each side, and the whole body pivots above them.
-  * A wire pass-through in the floor takes the motor leads up into the box.
+  * BODY: a closed, hollow barrel (a drum lying on its side, axis fore-aft), with a
+    face embossed on the front cap. It rides high, so the mass is high -- exactly the
+    fix for this robot's low-CoM twitchiness (see README). It prints as a two-piece
+    clamshell split on the horizontal mid-plane: drop the electronics + battery into
+    the lower half, cap it with the upper half.
+  * LEGS: four rods splay down-and-out from the lower body to two motor-holder blocks.
+  * FEET: the two holder blocks cradle the 25Dx65L motors (bore along the axle); the
+    wheels sit out each side at the bottom. Motor leads run up a slot into the body.
 
-Why a box (beyond looks): the project's own finding is that Mr. Wobbles has a LOW
-center of mass (motors sit right on the axle), which makes it twitchy, and the
-fix is "mount the battery high." An enclosed box does exactly that for free -- the
-shell mass and the strapped-high battery both sit well above the axle -- so L (CoM
-height above the axle) goes UP and the robot gets more forgiving. The number
-regenerates from this STL via `uv run balancer-params`.
-
-Coordinate frame: the WHEEL AXLE is the origin (0,0,0). X = width (the axle the
-wheels spin on), Y = up (body is all +Y, above the axle), Z = depth (front-back).
-So a point's Y coordinate IS its height above the axle -- which is exactly what
-robot_params.py wants. Everything is unions + one boolean difference.
+Coordinate frame: the WHEEL AXLE is the origin (0,0,0). X = width (the axle the wheels
+spin on), Y = up (the whole body is +Y, above the axle), Z = fore-aft (face on +Z). So a
+point's Y coordinate is directly its height above the axle -- what robot_params.py wants.
 """
 from pathlib import Path
 
@@ -31,36 +24,37 @@ import numpy as np
 import trimesh
 
 HERE = Path(__file__).parent
-OUT_SHELL = HERE / "balancer_chassis_v3.stl"
-OUT_LID = HERE / "balancer_lid_v3.stl"
+OUT_SHELL = HERE / "balancer_chassis_v4.stl"          # full shell: mass/CoM source
+OUT_TOP = HERE / "balancer_chassis_v4_top.stl"        # print piece: upper clamshell
+OUT_BOT = HERE / "balancer_chassis_v4_bottom.stl"     # print piece: lower clamshell + legs
+ENGINE = "manifold"
 
 # ---------------- parameters (mm) ----------------
-# enclosure (the electronics box) -- roughly square front face, sits up high
-BOX_W, BOX_H, BOX_D = 112.0, 96.0, 62.0     # outer width x height x depth
-WALL = 2.5                                   # wall / floor thickness
-BOX_BOTTOM_Y = 14.0                          # box floor's outer underside, above the axle
-                                             # (clears the motor bodies at Y=0)
+BODY_R = 38.0                # barrel radius
+BODY_LEN = 100.0            # barrel length (fore-aft, along Z, flat caps)
+BODY_CY = 88.0              # body axis height above the wheel axle
+WALL = 2.5                  # shell wall
+FRONT_WALL = 4.0            # front cap thicker so the face embosses cleanly
+SPLIT_Y = BODY_CY           # clamshell split plane (through the axis)
+BODY_Z0 = -BODY_LEN / 2.0   # back cap plane
+BODY_Z1 = BODY_LEN / 2.0    # front cap plane (face)
 
-# motors: Pololu #4863 25Dx65L, body ~25 mm dia, mounted coaxial along X at Y=0
-MOTOR_R = 12.75                              # 25 mm dia + 0.5 mm slip fit, /2
-BORE_X = [20.0, 50.0]                        # bulkhead plates per side (near center + outer)
-PLATE_TX = 5.0                               # plate thickness along X
-PLATE_D = 34.0                               # plate depth along Z
-PLATE_TOP_Y = BOX_BOTTOM_Y + 3.0             # overlap up into the floor for a clean weld
-PLATE_BOT_Y = -18.0                          # hangs below the axle; ground is at -35 (wheel r)
+# motors: Pololu #4863 25Dx65L, coaxial along X at the axle (Y=0)
+MOTOR_R = 12.75             # 25 mm dia + slip fit, /2
+HOLD_X0, HOLD_X1 = 15.0, 52.0   # each holder block spans this |x| range
+HOLD_Y0, HOLD_Y1 = -15.0, 9.0
+HOLD_Z = 30.0              # holder depth
 
-# electronics standoffs on the floor (board ~50 x 38, M2.5)
-STANDOFF_H = 6.0
-STANDOFF_R = 3.0
-STANDOFF_PILOT_R = 1.1
-STANDOFF_XY = [(22.0, 16.0), (22.0, -16.0), (-22.0, 16.0), (-22.0, -16.0)]  # (x, z)
+# legs: four rods, holder-top -> lower body surface (kept inside radius BODY_R)
+LEG_R = 5.5
+LEG_TOP = (34.0, 9.0)      # (|x|, y) where a leg meets its holder
+LEG_BODY = (15.0, 54.0)    # (|x|, y) where a leg meets the body
+LEG_TOP_Z = 13.0           # front/back rods at +/- this in Z at the foot
+LEG_BODY_Z = 20.0          # ... and at the body
 
-# battery strap slots high on the back wall (holds an ~85 g LiPo up top)
-STRAP_W, STRAP_H = 3.0, 10.0
-STRAP_Y = 78.0
-STRAP_X = 20.0
-
-FLOOR_TOP_Y = BOX_BOTTOM_Y + WALL            # inside floor surface
+# face on the front cap (+Z = BODY_Z1)
+EYE_R, EYE_Y, EYE_X, EYE_DEPTH = 6.0, 100.0, 13.0, 1.8
+MOUTH_Y, MOUTH_R, MOUTH_DEPTH = 76.0, 15.0, 1.8
 
 
 def box(w, h, d, center=(0, 0, 0)):
@@ -69,90 +63,80 @@ def box(w, h, d, center=(0, 0, 0)):
     return m
 
 
-def x_cylinder(radius, length, center=(0, 0, 0)):
-    """A cylinder whose axis runs along X (motors + bores lie on the axle)."""
-    c = trimesh.creation.cylinder(radius=radius, height=length, sections=64)
+def z_cyl(radius, height, center=(0, 0, 0), sections=96):
+    c = trimesh.creation.cylinder(radius=radius, height=height, sections=sections)
+    c.apply_translation(center)
+    return c
+
+
+def x_cyl(radius, height, center=(0, 0, 0)):
+    c = trimesh.creation.cylinder(radius=radius, height=height, sections=64)
     c.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 1, 0]))
     c.apply_translation(center)
     return c
 
 
-def y_cylinder(radius, length, center=(0, 0, 0)):
-    c = trimesh.creation.cylinder(radius=radius, height=length, sections=32)
-    c.apply_translation(center)
-    return c
+def rod(p0, p1, radius=LEG_R):
+    return trimesh.creation.cylinder(radius=radius, segment=[p0, p1], sections=24)
 
 
 def build_shell():
-    box_cy = BOX_BOTTOM_Y + BOX_H / 2.0                      # box vertical center
+    # --- solid barrel body (flat caps) ---
+    solids = [z_cyl(BODY_R, BODY_LEN, center=(0, BODY_CY, 0))]
 
-    # --- the closed body: outer box minus an inner cavity that pokes out the top ---
-    outer = box(BOX_W, BOX_H, BOX_D, center=(0, box_cy, 0))
-    cavity = box(BOX_W - 2 * WALL, BOX_H, BOX_D - 2 * WALL,
-                 center=(0, box_cy + WALL, 0))              # shifted up -> floor stays, top opens
-    solids = [outer]
-
-    # --- motor bulkheads under the floor (the wheels hang off these) ---
-    plate_cy = (PLATE_TOP_Y + PLATE_BOT_Y) / 2.0
-    plate_h = PLATE_TOP_Y - PLATE_BOT_Y
+    # --- motor holder blocks (the feet) ---
     for side in (+1, -1):
-        for bx in BORE_X:
-            solids.append(box(PLATE_TX, plate_h, PLATE_D, center=(side * bx, plate_cy, 0)))
+        cx = side * (HOLD_X0 + HOLD_X1) / 2.0
+        solids.append(box(HOLD_X1 - HOLD_X0, HOLD_Y1 - HOLD_Y0, HOLD_Z,
+                          center=(cx, (HOLD_Y0 + HOLD_Y1) / 2.0, 0)))
 
-    # --- electronics standoffs on the floor ---
-    for (sx, sz) in STANDOFF_XY:
-        solids.append(y_cylinder(STANDOFF_R, STANDOFF_H,
-                                 center=(sx, FLOOR_TOP_Y + STANDOFF_H / 2.0, sz)))
-
-    body = trimesh.boolean.union(solids, engine="manifold")
-
-    # --- subtract everything at once ---
-    tools = [cavity]
-    # motor bore: one straight channel through all four bulkheads at the axle
-    tools.append(x_cylinder(MOTOR_R, BOX_W + 40, center=(0, 0, 0)))
-    # wire pass-through in the floor, center
-    tools.append(box(16, WALL + 4, 12, center=(0, FLOOR_TOP_Y - WALL / 2.0, 0)))
-    # standoff pilot holes
-    for (sx, sz) in STANDOFF_XY:
-        tools.append(y_cylinder(STANDOFF_PILOT_R, STANDOFF_H + WALL + 2,
-                                center=(sx, FLOOR_TOP_Y + STANDOFF_H / 2.0, sz)))
-    # battery strap slots through the back wall (-Z)
-    back_z = -(BOX_D / 2.0)
+    # --- four splayed legs ---
     for side in (+1, -1):
-        tools.append(box(STRAP_W, STRAP_H, WALL + 4, center=(side * STRAP_X, STRAP_Y, back_z)))
+        for zside in (+1, -1):
+            top = (side * LEG_TOP[0], LEG_TOP[1], zside * LEG_TOP_Z)
+            bot = (side * LEG_BODY[0], LEG_BODY[1], zside * LEG_BODY_Z)
+            solids.append(rod(top, bot))
 
-    cut = trimesh.boolean.union(tools, engine="manifold")
-    shell = trimesh.boolean.difference([body, cut], engine="manifold")
-    return shell
+    body = trimesh.boolean.union(solids, engine=ENGINE)
+
+    # --- subtract: hollow interior, motor bore, wire slot, face ---
+    tools = []
+    # hollow: leave FRONT_WALL at +Z, WALL at -Z and around
+    cav_len = BODY_LEN - FRONT_WALL - WALL
+    cav_zc = (BODY_Z0 + WALL + BODY_Z1 - FRONT_WALL) / 2.0
+    tools.append(z_cyl(BODY_R - WALL, cav_len, center=(0, BODY_CY, cav_zc)))
+
+    # motor bore through both feet along the axle
+    tools.append(x_cyl(MOTOR_R, 2 * HOLD_X1 + 40, center=(0, 0, 0)))
+    # wire pass-through slot in the lower body wall
+    tools.append(box(22, 16, 26, center=(0, BODY_CY - BODY_R + WALL, 0)))
+
+    # face on the front cap
+    fz = BODY_Z1
+    for side in (+1, -1):
+        tools.append(z_cyl(EYE_R, EYE_DEPTH * 2, center=(side * EYE_X, EYE_Y, fz - EYE_DEPTH)))
+    smile_a = z_cyl(MOUTH_R, MOUTH_DEPTH * 2, center=(0, MOUTH_Y, fz - MOUTH_DEPTH))
+    smile_b = z_cyl(MOUTH_R, MOUTH_DEPTH * 4, center=(0, MOUTH_Y + 7.0, fz - MOUTH_DEPTH))
+    tools.append(trimesh.boolean.difference([smile_a, smile_b], engine=ENGINE))
+
+    cut = trimesh.boolean.union(tools, engine=ENGINE)
+    return trimesh.boolean.difference([body, cut], engine=ENGINE)
 
 
-def build_lid():
-    """Flat snap-on lid: a top plate + a lip that drops into the box opening.
-
-    Modelled flat (prints face-down, no supports); on the robot it sits at the
-    top of the box, ~BOX_H above the axle.
-    """
-    lip_clear = 0.4
-    rim = 3.0
-    top = box(BOX_W, 2.5, BOX_D, center=(0, 1.25, 0))
-    lip_ow = BOX_W - 2 * WALL - 2 * lip_clear
-    lip_od = BOX_D - 2 * WALL - 2 * lip_clear
-    lip_outer = box(lip_ow, 5.0, lip_od, center=(0, -2.5, 0))
-    lip_inner = box(lip_ow - 2 * rim, 7.0, lip_od - 2 * rim, center=(0, -2.5, 0))
-    lip = trimesh.boolean.difference([lip_outer, lip_inner], engine="manifold")  # rim frame
-    lid = trimesh.boolean.union([top, lip], engine="manifold")
-    # two vent slots
-    vents = [box(30, 6, 4, center=(0, 1.5, 12)), box(30, 6, 4, center=(0, 1.5, -12))]
-    lid = trimesh.boolean.difference([lid, trimesh.boolean.union(vents, engine="manifold")],
-                                     engine="manifold")
-    return lid
+def clamshell(shell):
+    """Split on the horizontal mid-plane for support-free printing."""
+    big = 400.0
+    top = trimesh.boolean.intersection(
+        [shell, box(big, big, big, center=(0, SPLIT_Y + big / 2.0, 0))], engine=ENGINE)
+    bot = trimesh.boolean.intersection(
+        [shell, box(big, big, big, center=(0, SPLIT_Y - big / 2.0, 0))], engine=ENGINE)
+    return top, bot
 
 
 def report(mesh, name):
-    vol_cm3 = mesh.volume / 1000.0
-    com = np.round(mesh.center_mass, 1)
-    print(f"{name}: watertight={mesh.is_watertight}  size_mm={np.round(mesh.extents, 1)}")
-    print(f"    volume={vol_cm3:.1f} cm^3  (~{vol_cm3 * 1.27:.0f} g PETG)  CoM_mm={com}")
+    v = mesh.volume / 1000.0
+    print(f"{name}: watertight={mesh.is_watertight}  size={np.round(mesh.extents,1)}  "
+          f"vol={v:.1f}cm^3 (~{v*1.27:.0f}g)  CoM_mm={np.round(mesh.center_mass,1)}")
 
 
 def main():
@@ -160,11 +144,12 @@ def main():
     shell.export(str(OUT_SHELL))
     report(shell, OUT_SHELL.name)
 
-    lid = build_lid()
-    lid.export(str(OUT_LID))
-    report(lid, OUT_LID.name)
+    top, bot = clamshell(shell)
+    top.export(str(OUT_TOP))
+    bot.export(str(OUT_BOT))
+    report(top, OUT_TOP.name)
+    report(bot, OUT_BOT.name)
 
-    # the number that matters: CoM height (Y) of the shell above the axle
     print(f"\nshell CoM height above axle: {shell.center_mass[1]:.1f} mm")
 
 
