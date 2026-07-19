@@ -12,7 +12,8 @@ CAD_DIR = PROJECT_ROOT / "cad"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 HARDWARE_DIR = PROJECT_ROOT / "hardware"
 
-STL_PATH = CAD_DIR / "balancer_chassis_v2.stl"
+STL_PATH = CAD_DIR / "balancer_chassis_v3.stl"       # enclosed box; mesh origin = wheel axle
+LID_PATH = CAD_DIR / "balancer_lid_v3.stl"
 KC_REAL_PATH = OUTPUTS_DIR / "Kc_real.npy"       # Phase 2: full-state gains (needs encoders)
 KC_PHASE1_PATH = OUTPUTS_DIR / "Kc_phase1.npy"   # Phase 1: pitch-only gains (IMU alone)
 PHYS_SUMMARY_PATH = OUTPUTS_DIR / "physical_summary.txt"

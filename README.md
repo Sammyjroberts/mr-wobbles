@@ -28,23 +28,27 @@ RP2350 / Pico 2 W) balances the real robot and consumes the gains this repo prod
 
 ## The finding that shaped the design
 
-The chassis is a tall, light plate, so intuition says the center of mass is high and the
+The chassis looks tall and light, so intuition says the center of mass is high and the
 robot falls slowly. It's the opposite. **Two 100 g gearmotors sit right on the wheel axle**,
 and they drag the CoM down hard. Computed from the actual STL and datasheet masses:
 
 | quantity                          | value    |
 |-----------------------------------|----------|
-| plate mass (from STL, PETG)       | 134 g    |
-| pole / body mass                  | 384 g    |
-| total mass                        | 494 g    |
-| **L, CoM height above the axle**  | **29.3 mm** |
+| shell mass (from STL, PETG)       | 136 g    |
+| pole / body mass                  | 499 g    |
+| total mass (with onboard battery) | 609 g    |
+| **L, CoM height above the axle**  | **35.1 mm** |
 
-A naive guess put L near 90 mm; this is **~3× shorter**. A low CoM means a short pendulum,
-which means a *fast-falling, twitchy* robot that demands a quicker control loop and leaves
-less margin. Concrete design takeaway baked into the params: **mount the battery high.**
-An 85 g LiPo up top raises L from 29 mm to ~49 mm and makes balancing far more forgiving.
-(These numbers regenerate from the STL via `uv run balancer-params`, which also rewrites
-`outputs/physical_summary.txt`, so they can't go stale against the printed chassis.)
+A naive guess put L near 90 mm; the real number is a fraction of that. A low CoM means a
+short pendulum, which means a *fast-falling, twitchy* robot that demands a quicker control
+loop and leaves less margin. The concrete design response is built into the chassis itself:
+**carry the mass high.** The [v3 enclosed-box chassis](cad/gen_chassis.py) does this on
+purpose — the box shell sits ~48 mm above the axle and the battery straps high on the inside
+back wall (~78 mm) — so L lands at **35 mm** instead of the ~29 mm of the old open flat plate,
+*even after* adding an 85 g battery the tethered version never carried. Cutting the cord costs
+mass; mounting it high buys back a longer, more forgiving pendulum. (These numbers regenerate
+from the STL via `uv run balancer-params`, which also rewrites `outputs/physical_summary.txt`,
+so they can't go stale against the printed chassis.)
 
 This is the whole point of deriving parameters instead of guessing them: the hard part of
 the problem was invisible until the numbers were real.
@@ -91,24 +95,26 @@ code can't drift apart: `uv run python scripts/report_stats.py`.
 
 | metric                         | value                          | reading |
 |--------------------------------|--------------------------------|---------|
-| open-loop unstable pole        | \|z\| = **1.049** (> 1)        | it genuinely wants to fall (gravity runaway) |
-| closed-loop poles              | \|z\| = 0.72, 0.98, 0.998, 0.998 | all inside the unit circle → **stabilized** |
+| open-loop unstable pole        | \|z\| = **1.047** (> 1)        | it genuinely wants to fall (gravity runaway) |
+| closed-loop poles              | \|z\| = 0.78, 0.98, 0.998, 0.998 | all inside the unit circle → **stabilized** |
 | pitch recovery (from 3° tilt)  | back within 1° in **~0.07 s**  | the balancing loop is fast and aggressive |
 | position re-centering          | within ±10 mm in **~2.3 s**    | slower, soft position loop (by design) |
-| disturbance rejection          | **2.2 N** shove → peak tilt **3.0°**, lunge ~27 cm | catches it and recovers |
-| peak control effort            | **0.04 N·m** of 0.31 N·m stall | ~**88 % torque headroom** at ideal sensors |
+| disturbance rejection          | **2.2 N** shove → peak tilt **3.0°**, lunge ~20 cm | catches it and recovers |
+| peak control effort            | **0.042 N·m** of 0.31 N·m stall | ~**87 % torque headroom** at ideal sensors |
 | encoder vs. true position      | tracks within **~2 mm** while balancing | the sim-to-real signal path is faithful |
 
 **The interesting finding: latency, not noise, is the enemy.** Sweeping to pessimistic
 hardware (0.02 rad/s gyro noise + 4 ms control latency + PWM deadband), the *same* 2.2 N shove
-drives peak tilt to **~19°** and momentarily **saturates the motors**, and isolating the knobs
-shows it's almost entirely the **4 ms of loop latency**, not the noise. That's the low-CoM
-finding cashing out: the pendulum is twitchy (fastest closed-loop mode ~6 ms), so a fast,
-low-latency control loop is a **hard Phase-2 firmware requirement**, not a nicety. It still
-recovers, but the ideal-sensor headroom is spent closing that gap.
+drives peak tilt to **~30°** and momentarily **saturates the motors**, and isolating the knobs
+shows it's almost entirely the **4 ms of loop latency**, not the noise. (The margin is thinner
+than the tethered flat-plate build's ~19°: the untethered robot carries its own 85 g battery,
+so it's heavier and a given shove hits harder — the cost of cutting the cord.) That's the
+low-CoM finding cashing out: the pendulum is twitchy (fastest closed-loop mode ~6 ms), so a
+fast, low-latency control loop is a **hard Phase-2 firmware requirement**, not a nicety. It
+still recovers, but the ideal-sensor headroom is spent closing that gap.
 
 **Phase-1 acceptance criterion.** With the IMU-only gains (no encoders, position feedback
-zeroed) it balances but **drifts ~28 cm over 9 s**: quantified wander, not a bug. That's the
+zeroed) it balances but **drifts ~36 cm over 9 s**: quantified wander, not a bug. That's the
 number to check the real robot against during Phase-1 bring-up: if it wanders faster than sim
 predicts, something else is wrong.
 
@@ -147,10 +153,11 @@ src/balancer/
   paths.py                 resolves repo data dirs (cad/, outputs/)
 tests/test_design.py       CI gates: stable, torque headroom, golden gains, encoder tracks truth
 .github/workflows/         validate.yml, runs the gates on every push/PR
-cad/balancer_chassis_v2.stl   printable chassis plate (PETG, prints flat)
-cad/gen_chassis.py            parametric generator for the plate
+cad/balancer_chassis_v3.stl   printable enclosed-box chassis (PETG); mesh origin = wheel axle
+cad/balancer_lid_v3.stl       snap-on lid for the electronics box
+cad/gen_chassis.py            parametric generator for the box + lid
 hardware/wiring_phase1.svg    Phase-1 wiring (balance on IMU, no encoders)
-hardware/chassis_drawing.svg  dimensioned plate drawing
+hardware/chassis_drawing.svg  dimensioned chassis drawing
 scripts/record_gif.py         renders assets/balance.gif from the sim
 scripts/report_stats.py       prints the Results numbers, live from the design
 outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), physical_summary.txt
@@ -160,6 +167,21 @@ outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), ph
 
 ## Hardware roadmap
 
+- **Chassis (v3, enclosed box):** the current design is a closed box that carries the
+  electronics up high and the two gearmotors on bulkheads underneath, wheels out each side
+  (`cad/gen_chassis.py` → `balancer_chassis_v3.stl` + a snap-on `balancer_lid_v3.stl`). Print
+  in PETG standing upright, opening up; drop the board onto the four floor standoffs, strap the
+  battery high on the inside back wall, run the motor leads up through the floor pass-through,
+  clip the lid on. It replaces the earlier open flat plate (v1/v2) and, by mounting mass high,
+  is *more forgiving to balance* (L 29 → 35 mm) — see the finding above.
+- **Power (cut the tether):** the bench build runs off a 12 V wall supply into the TB6612's
+  `VM` screw terminal. To go free, the cheapest drop-in that matches the 12 V motors is a
+  **3S LiPo** (11.1 V nominal, 12.6 V full; ~800–1300 mAh, ~80–110 g). Wire its XT30/XT60
+  pigtail through a small slide switch into `VM`/`GND` (keep the common ground), and add a
+  ~$3 LiPo low-voltage buzzer so you don't over-discharge it. The physical params already
+  budget for an **85 g** pack (`M_BATTERY`) strapped high. Easier-but-bulkier alternative: a
+  **3S 18650 pack** with a protection board (safer to charge, heavier). Avoid an 8×AA holder —
+  ~230 g of sag-prone mass low down is the opposite of what this robot wants.
 - **Phase 1 (IMU only):** Pico (USB) + TB6612 driver + 2 gearmotors + IMU (STEMMA QT).
   Balances on the IMU alone (gains in `outputs/Kc_phase1.npy`), so it drifts/wanders, with no
   position feedback. Simplest wiring, no level shifter. See `hardware/wiring_phase1.svg`.
@@ -171,16 +193,21 @@ outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), ph
   TB6612, and a hardware watchdog for crash recovery. Reads the gains `K` produced by
   `balancer-design`. Built and running — see `firmware/`.
 
-**Build status:** assembled and **self-balancing on real hardware** (Phase 1, IMU-only) — see
-the clip up top. Also validated in sim (the Phase-2 encoder path is the default and is
-CI-gated). Next up: wheel encoders for Phase-2 position hold (`outputs/Kc_real.npy`).
+**Build status:** the earlier open flat-plate build is **self-balancing on real hardware**
+(Phase 1, IMU-only) — that's the clip up top. The **v3 enclosed-box chassis** is the current
+design: derived through the same STL → params → gains pipeline and CI-gated in sim (the
+Phase-2 encoder path is the default), printable, and the recommended next build — not yet
+assembled on hardware. Next up: print the box, move onto an onboard battery, then wheel
+encoders for Phase-2 position hold (`outputs/Kc_real.npy`).
 
 ---
 
 ## Notes
 
 - `M_WHEEL` and `M_ELECTRONICS` in `robot_params.py` are estimates; refine if you weigh the
-  parts. The motors and plate dominate the CoM and are both known precisely.
+  parts. The motors and printed shell dominate the CoM and are both known precisely (the shell
+  mass comes straight from the STL). `M_BATTERY` is the ~85 g 3S LiPo; drop it to 0 to model
+  the tethered bench setup.
 - `plant.py`'s pole inertia is lumped/approximate (mass and CoM height are exact; wheel spin
   inertia *is* modeled from the cylinder geoms); swap in a distributed pole inertia for tighter
   validation.

@@ -1,22 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="540" height="705" viewBox="0 0 360 470" role="img">
-<rect width="360" height="470" fill="#FBFAF7"/>
-<rect x="80" y="30" width="160" height="360" rx="8" fill="#EBE9E2" stroke="#888780" stroke-width="1.5"/>
-<circle cx="96.5" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="96.5" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="96.5" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="96.5" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="96.5" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="121.9" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="121.9" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="121.9" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="121.9" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="121.9" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="147.3" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="147.3" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="147.3" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="147.3" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="147.3" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="172.7" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="172.7" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="172.7" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="172.7" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="172.7" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="198.1" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="198.1" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="198.1" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="198.1" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="198.1" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="223.5" cy="374.0" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="223.5" cy="348.6" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="223.5" cy="323.2" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="223.5" cy="297.8" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><circle cx="223.5" cy="272.4" r="3.4" fill="none" stroke="#5F5E5A" stroke-width="1"/><rect x="121.0" y="182.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/><rect x="193.0" y="182.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/><rect x="121.0" y="112.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/><rect x="193.0" y="112.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/><rect x="121.0" y="46.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/><rect x="193.0" y="46.0" width="6" height="16" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/>
-<rect x="144" y="213" width="32" height="22" rx="3" fill="none" stroke="#B8460F" stroke-width="1.2"/>
-<!-- width dim -->
-<line x1="80" y1="20" x2="240" y2="20" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="160" y="14" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">80 mm</text>
-<!-- height dim -->
-<line x1="66" y1="30" x2="66" y2="390" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="60" y="213" text-anchor="end" font-family="sans-serif" font-size="11" fill="#3A3A37">180 mm</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="440" viewBox="0 0 560 440" role="img">
+<rect width="560" height="440" fill="#FBFAF7"/>
 <defs><marker id="a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5"/></marker></defs>
-<!-- labels -->
-<text x="250" y="330" font-family="sans-serif" font-size="11" fill="#5F5E5A">M3 hole grid</text>
-<text x="250" y="344" font-family="sans-serif" font-size="10" fill="#9A988F">mount brackets here,</text>
-<text x="250" y="357" font-family="sans-serif" font-size="10" fill="#9A988F">slide to set wheel height</text>
-<text x="250" y="120" font-family="sans-serif" font-size="11" fill="#185FA5">zip-tie strap slots</text>
-<text x="250" y="134" font-family="sans-serif" font-size="10" fill="#9A988F">driver / Pico / battery</text>
-<text x="250" y="226" font-family="sans-serif" font-size="11" fill="#B8460F">wire pass-through</text>
-<text x="160" y="410" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5F5E5A">6 mm thick PETG  ·  prints flat, no supports</text>
-<text x="160" y="430" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#9A988F">motors stick out each face → wheels coaxial left &amp; right</text>
+<text x="280" y="26" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#3A3A37">Mr. Wobbles v3 - enclosed box chassis (front view)</text>
+
+<!-- wheels: 70 mm dia, 146 mm track, centered on the axle -->
+<circle cx="114" cy="300" r="70" fill="#EDEBE4" stroke="#5F5E5A" stroke-width="1.5"/>
+<circle cx="406" cy="300" r="70" fill="#EDEBE4" stroke="#5F5E5A" stroke-width="1.5"/>
+<circle cx="114" cy="300" r="7" fill="#9A988F"/>
+<circle cx="406" cy="300" r="7" fill="#9A988F"/>
+
+<!-- enclosure box: 112 x 96 mm, floor 14 mm above the axle -->
+<rect x="148" y="80" width="224" height="192" rx="8" fill="#EBE9E2" stroke="#888780" stroke-width="1.5"/>
+<!-- lid line at the top opening -->
+<rect x="148" y="74" width="224" height="10" rx="4" fill="#E1DFD6" stroke="#888780" stroke-width="1.2"/>
+<text x="378" y="82" font-family="sans-serif" font-size="10" fill="#9A988F">snap-on lid</text>
+
+<!-- battery high inside -->
+<rect x="196" y="120" width="128" height="34" rx="3" fill="#F6E2D6" stroke="#B8460F" stroke-width="1.2"/>
+<text x="260" y="141" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#B8460F">3S LiPo - strap high</text>
+
+<!-- electronics low on the floor standoffs -->
+<rect x="196" y="238" width="128" height="26" rx="3" fill="#E4EFEA" stroke="#2E6F57" stroke-width="1.2"/>
+<text x="260" y="255" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#2E6F57">Pico + TB6612 + IMU</text>
+
+<!-- motor bulkheads under the floor -->
+<rect x="196" y="272" width="18" height="40" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/>
+<rect x="256" y="272" width="18" height="40" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/>
+<rect x="286" y="272" width="18" height="40" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/>
+<rect x="346" y="272" width="18" height="40" rx="2" fill="none" stroke="#185FA5" stroke-width="1.2"/>
+<text x="378" y="300" font-family="sans-serif" font-size="10" fill="#185FA5">motor bulkheads</text>
+
+<!-- axle line -->
+<line x1="44" y1="300" x2="476" y2="300" stroke="#B8460F" stroke-width="0.8" stroke-dasharray="5 4"/>
+<text x="44" y="294" font-family="sans-serif" font-size="10" fill="#B8460F">wheel axle = mesh origin (Y=0)</text>
+
+<!-- CoM / L marker -->
+<circle cx="260" cy="230" r="4" fill="#7A4FB5"/>
+<line x1="260" y1="300" x2="260" y2="230" stroke="#7A4FB5" stroke-width="0.9" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="266" y="268" font-family="sans-serif" font-size="10.5" fill="#7A4FB5">L = 35 mm (CoM above axle)</text>
+
+<!-- dims -->
+<line x1="148" y1="60" x2="372" y2="60" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="260" y="54" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">112 mm</text>
+<line x1="392" y1="80" x2="392" y2="272" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="398" y="180" font-family="sans-serif" font-size="11" fill="#3A3A37">96 mm</text>
+<line x1="114" y1="388" x2="406" y2="388" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="260" y="404" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">146 mm track</text>
+<line x1="406" y1="230" x2="406" y2="370" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="414" y="304" font-family="sans-serif" font-size="10.5" fill="#3A3A37">70 mm wheel</text>
+
+<text x="280" y="428" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#9A988F">PETG - print upright, opening up - box + separate lid - regenerate with cad/gen_chassis.py</text>
 </svg>
