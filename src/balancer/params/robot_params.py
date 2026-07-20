@@ -33,8 +33,8 @@ MOTOR_STALL_TORQUE = 0.314   # N*m  (3.2 kg*cm gearbox-output stall @ 12 V)
 # The shell height comes from the STL; these are the loose parts nested inside the barrel.
 Z_MOTOR       = 0.000   # motor body CoM sits on the axle line (bores at Y=0)
 Z_WHEEL       = 0.000   # wheels at the axle
-Z_ELECTRONICS = 0.058   # board resting in the lower half of the barrel
-Z_BATTERY     = 0.085   # LiPo nested high in the barrel (near the body axis, BODY_CY)
+Z_ELECTRONICS = 0.080   # board resting in the lower half of the barrel
+Z_BATTERY     = 0.105   # LiPo nested high in the barrel (near the body axis, BODY_CY)
 
 
 def _mesh_props(path):

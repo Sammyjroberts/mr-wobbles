@@ -34,20 +34,20 @@ and they drag the CoM down hard. Computed from the actual STL and datasheet mass
 
 | quantity                          | value    |
 |-----------------------------------|----------|
-| shell mass (from STL, PETG)       | 149 g    |
-| pole / body mass                  | 484 g    |
-| total mass (with onboard battery) | 594 g    |
-| **L, CoM height above the axle**  | **40.8 mm** |
+| shell mass (from STL, PETG)       | 151 g    |
+| pole / body mass                  | 486 g    |
+| total mass (with onboard battery) | 596 g    |
+| **L, CoM height above the axle**  | **49.9 mm** |
 
 A naive guess put L near 90 mm; the real number is a fraction of that. A low CoM means a
 short pendulum, which means a *fast-falling, twitchy* robot that demands a quicker control
 loop and leaves less margin. The concrete design response is built into the chassis itself:
-**carry the mass high.** The [v4 barrel-on-legs chassis](cad/gen_chassis.py) does this on
-purpose — the body is a barrel held up on two splayed legs, so the shell mass sits ~65 mm
-above the axle and the electronics + battery nest high inside it — so L lands at **41 mm**
-instead of the ~29 mm of the old open flat plate, *even after* adding an 85 g battery the
-tethered version never carried. Cutting the cord costs mass; standing it up on legs buys back
-a longer, more forgiving pendulum. (These numbers regenerate from the STL via
+**carry the mass high.** The [v4 barrel-on-K-legs chassis](cad/gen_chassis.py) does this on
+purpose — the body is a barrel riding high across the top on two braced K-legs, so the shell
+mass sits ~75 mm above the axle and the electronics + battery nest inside it — so L lands at
+**50 mm** instead of the ~29 mm of the old open flat plate, *even after* adding an 85 g battery
+the tethered version never carried. Cutting the cord costs mass; standing it up on legs buys
+back a longer, more forgiving pendulum. (These numbers regenerate from the STL via
 `uv run balancer-params`, which also rewrites `outputs/physical_summary.txt`, so they can't go
 stale against the printed chassis.)
 
@@ -96,8 +96,8 @@ code can't drift apart: `uv run python scripts/report_stats.py`.
 
 | metric                         | value                          | reading |
 |--------------------------------|--------------------------------|---------|
-| open-loop unstable pole        | \|z\| = **1.043** (> 1)        | it genuinely wants to fall (gravity runaway) |
-| closed-loop poles              | \|z\| = 0.80, 0.98, 0.998, 0.998 | all inside the unit circle → **stabilized** |
+| open-loop unstable pole        | \|z\| = **1.039** (> 1)        | it genuinely wants to fall (gravity runaway) |
+| closed-loop poles              | \|z\| = 0.83, 0.98, 0.998, 0.998 | all inside the unit circle → **stabilized** |
 | pitch recovery (from 3° tilt)  | back within 1° in **~0.07 s**  | the balancing loop is fast and aggressive |
 | position re-centering          | within ±10 mm in **~2.3 s**    | slower, soft position loop (by design) |
 | disturbance rejection          | **2.2 N** shove → peak tilt **3.0°**, lunge ~20 cm | catches it and recovers |
@@ -106,17 +106,16 @@ code can't drift apart: `uv run python scripts/report_stats.py`.
 
 **The interesting finding: latency, not noise, is the enemy.** Sweeping to pessimistic
 hardware (0.02 rad/s gyro noise + 4 ms control latency + PWM deadband), the *same* 2.2 N shove
-drives peak tilt to **~28°** and momentarily **saturates the motors**, and isolating the knobs
+drives peak tilt to **~30°** and momentarily **saturates the motors**, and isolating the knobs
 shows it's almost entirely the **4 ms of loop latency**, not the noise. (The margin is thinner
 than the tethered flat-plate build's ~19°: the untethered robot carries its own 85 g battery,
-so it's heavier and a given shove hits harder — the cost of cutting the cord, though standing
-the mass up on legs claws some of it back.) That's the low-CoM finding cashing out: the
-pendulum is twitchy (fastest closed-loop mode ~6 ms), so a fast, low-latency control loop is a
-**hard Phase-2 firmware requirement**, not a nicety. It still recovers, but the ideal-sensor
-headroom is spent closing that gap.
+so it's heavier and a given shove hits harder — the cost of cutting the cord.) That's the
+low-CoM finding cashing out: the pendulum is twitchy (fastest closed-loop mode ~6 ms), so a
+fast, low-latency control loop is a **hard Phase-2 firmware requirement**, not a nicety. It
+still recovers, but the ideal-sensor headroom is spent closing that gap.
 
 **Phase-1 acceptance criterion.** With the IMU-only gains (no encoders, position feedback
-zeroed) it balances but **drifts ~44 cm over 9 s**: quantified wander, not a bug. That's the
+zeroed) it balances but **drifts ~59 cm over 9 s**: quantified wander, not a bug. That's the
 number to check the real robot against during Phase-1 bring-up: if it wanders faster than sim
 predicts, something else is wrong.
 
@@ -155,9 +154,9 @@ src/balancer/
   paths.py                 resolves repo data dirs (cad/, outputs/)
 tests/test_design.py       CI gates: stable, torque headroom, golden gains, encoder tracks truth
 .github/workflows/         validate.yml, runs the gates on every push/PR
-cad/balancer_chassis_v4.stl   printable barrel-on-legs chassis (PETG); mesh origin = wheel axle
+cad/balancer_chassis_v4.stl   printable barrel-on-K-legs chassis (PETG); mesh origin = wheel axle
 cad/balancer_chassis_v4_top.stl / _bottom.stl   the two clamshell print halves
-cad/gen_chassis.py            parametric generator for the barrel + legs + face
+cad/gen_chassis.py            parametric generator for the barrel + K-legs + face
 hardware/wiring_phase1.svg    Phase-1 wiring (balance on IMU, no encoders)
 hardware/chassis_drawing.svg  dimensioned chassis drawing
 scripts/record_gif.py         renders assets/balance.gif from the sim
@@ -169,13 +168,14 @@ outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), ph
 
 ## Hardware roadmap
 
-- **Chassis (v4, barrel on legs):** the current design is a friendly barrel body (with a face
-  on the front) held up on two splayed legs, the two gearmotors cradled in the feet and the
-  wheels out each side (`cad/gen_chassis.py` → `balancer_chassis_v4.stl`). It prints as a
-  two-piece clamshell (`_top` / `_bottom`) split on the horizontal mid-plane, support-free;
+- **Chassis (v4, barrel on K-legs):** the current design is a friendly barrel body (with a face
+  on the front curve) lying across the top, parallel to the wheel axle, held up high on two
+  braced **K-legs** — the traditional self-balancer silhouette. The gearmotors are cradled in
+  the feet, wheels out each side (`cad/gen_chassis.py` → `balancer_chassis_v4.stl`). It prints
+  as a two-piece clamshell (`_top` / `_bottom`) split on the horizontal mid-plane, support-free;
   nest the board + battery in the lower half, run the motor leads up the wire slot, clip the
   top on. It replaces the earlier open flat plate (v1/v2) and enclosed box (v3), and by
-  standing the mass up high it's *more forgiving to balance* (L 29 → 41 mm) — see the finding
+  standing the mass up high it's *more forgiving to balance* (L 29 → 50 mm) — see the finding
   above.
 - **Power (cut the tether):** the bench build runs off a 12 V wall supply into the TB6612's
   `VM` screw terminal. To go free, the cheapest drop-in that matches the 12 V motors is a
@@ -197,7 +197,7 @@ outputs/                      Kc_real.npy (Phase 2), Kc_phase1.npy (Phase 1), ph
   `balancer-design`. Built and running — see `firmware/`.
 
 **Build status:** the earlier open flat-plate build is **self-balancing on real hardware**
-(Phase 1, IMU-only) — that's the clip up top. The **v4 barrel-on-legs chassis** is the current
+(Phase 1, IMU-only) — that's the clip up top. The **v4 barrel-on-K-legs chassis** is the current
 design: derived through the same STL → params → gains pipeline and CI-gated in sim (the
 Phase-2 encoder path is the default), printable as a clamshell, and the recommended next
 build — not yet assembled on hardware. Next up: print the barrel, move onto an onboard

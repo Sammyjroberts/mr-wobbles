@@ -1,47 +1,54 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="560" height="440" viewBox="0 0 560 440" role="img">
-<rect width="560" height="440" fill="#FBFAF7"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="470" viewBox="0 0 560 470" role="img">
+<rect width="560" height="470" fill="#FBFAF7"/>
 <defs><marker id="a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5"/></marker></defs>
-<text x="280" y="26" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#3A3A37">Mr. Wobbles v4 - barrel on legs (front view)</text>
+<text x="280" y="26" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#3A3A37">Mr. Wobbles v4 - barrel on K-legs (front view)</text>
 
-<!-- legs: splay from lower body down to the feet -->
-<line x1="230" y1="196" x2="192" y2="286" stroke="#C9A07A" stroke-width="13" stroke-linecap="round"/>
-<line x1="290" y1="196" x2="328" y2="286" stroke="#C9A07A" stroke-width="13" stroke-linecap="round"/>
+<!-- K-legs: braced truss each side (spine + two diagonals meeting at a knee) -->
+<g stroke="#C9A07A" stroke-width="12" stroke-linecap="round" fill="none">
+  <!-- left leg -->
+  <line x1="214" y1="146" x2="196" y2="360"/>
+  <line x1="150" y1="160" x2="232" y2="250"/>
+  <line x1="232" y1="250" x2="200" y2="356"/>
+  <!-- right leg -->
+  <line x1="346" y1="146" x2="364" y2="360"/>
+  <line x1="410" y1="160" x2="328" y2="250"/>
+  <line x1="328" y1="250" x2="360" y2="356"/>
+</g>
+<text x="300" y="250" font-family="sans-serif" font-size="10.5" fill="#B58A5E">braced K-leg</text>
 
 <!-- motors in the feet -->
-<rect x="156" y="284" width="74" height="34" rx="4" fill="#C7CBD1" stroke="#6E7378" stroke-width="1.2"/>
-<rect x="330" y="284" width="74" height="34" rx="4" fill="#C7CBD1" stroke="#6E7378" stroke-width="1.2"/>
+<rect x="150" y="360" width="70" height="30" rx="4" fill="#C7CBD1" stroke="#6E7378" stroke-width="1.2"/>
+<rect x="340" y="360" width="70" height="30" rx="4" fill="#C7CBD1" stroke="#6E7378" stroke-width="1.2"/>
 
-<!-- wheels, seen edge-on (they spin on the left-right axle) -->
-<ellipse cx="114" cy="300" rx="9" ry="70" fill="#3B3F49" stroke="#23262C" stroke-width="1.2"/>
-<ellipse cx="406" cy="300" rx="9" ry="70" fill="#3B3F49" stroke="#23262C" stroke-width="1.2"/>
-<text x="96" y="384" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9A988F">wheel (edge-on)</text>
-<text x="424" y="384" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9A988F">wheel (edge-on)</text>
+<!-- wheels, edge-on -->
+<ellipse cx="120" cy="375" rx="9" ry="60" fill="#3B3F49" stroke="#23262C" stroke-width="1.2"/>
+<ellipse cx="440" cy="375" rx="9" ry="60" fill="#3B3F49" stroke="#23262C" stroke-width="1.2"/>
+<text x="104" y="446" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9A988F">wheel (edge-on)</text>
+<text x="456" y="446" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#9A988F">wheel (edge-on)</text>
 
-<!-- barrel body: front cap is a circle, dia 76 mm, axis 88 mm above the axle -->
-<circle cx="260" cy="124" r="76" fill="#EFE6DA" stroke="#B79A78" stroke-width="2"/>
-<!-- face -->
-<circle cx="234" cy="100" r="11" fill="#2E4B8F"/>
-<circle cx="286" cy="100" r="11" fill="#2E4B8F"/>
-<circle cx="237" cy="96" r="3.5" fill="#FBFAF7"/>
-<circle cx="289" cy="96" r="3.5" fill="#FBFAF7"/>
-<path d="M236 146 Q260 168 284 146" fill="none" stroke="#2E4B8F" stroke-width="5" stroke-linecap="round"/>
+<!-- barrel body: a drum lying across the top (axis left-right), 76 dia x 100 long -->
+<rect x="170" y="60" width="220" height="152" rx="76" fill="#EFE6DA" stroke="#B79A78" stroke-width="2"/>
+<!-- face on the front curve -->
+<circle cx="252" cy="112" r="12" fill="#2E4B8F"/>
+<circle cx="308" cy="112" r="12" fill="#2E4B8F"/>
+<circle cx="256" cy="108" r="4" fill="#FBFAF7"/>
+<circle cx="312" cy="108" r="4" fill="#FBFAF7"/>
+<path d="M254 156 Q280 178 306 156" fill="none" stroke="#2E4B8F" stroke-width="5" stroke-linecap="round"/>
 
 <!-- axle line -->
-<line x1="60" y1="300" x2="460" y2="300" stroke="#B8460F" stroke-width="0.8" stroke-dasharray="5 4"/>
-<text x="60" y="294" font-family="sans-serif" font-size="10" fill="#B8460F">wheel axle = mesh origin (Y=0)</text>
+<line x1="70" y1="375" x2="490" y2="375" stroke="#B8460F" stroke-width="0.8" stroke-dasharray="5 4"/>
+<text x="70" y="369" font-family="sans-serif" font-size="10" fill="#B8460F">wheel axle = mesh origin (Y=0)</text>
 
 <!-- CoM / L marker -->
-<circle cx="326" cy="218" r="4" fill="#7A4FB5"/>
-<line x1="326" y1="300" x2="326" y2="218" stroke="#7A4FB5" stroke-width="0.9" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="332" y="262" font-family="sans-serif" font-size="10.5" fill="#7A4FB5">L = 41 mm (CoM above axle)</text>
+<circle cx="360" cy="275" r="4" fill="#7A4FB5"/>
+<line x1="360" y1="375" x2="360" y2="275" stroke="#7A4FB5" stroke-width="0.9" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="366" y="330" font-family="sans-serif" font-size="10.5" fill="#7A4FB5">L = 50 mm (CoM above axle)</text>
 
 <!-- dims -->
-<line x1="356" y1="48" x2="356" y2="200" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="362" y="128" font-family="sans-serif" font-size="11" fill="#3A3A37">76 mm dia</text>
-<line x1="114" y1="392" x2="406" y2="392" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="260" y="408" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">146 mm track</text>
-<line x1="424" y1="230" x2="424" y2="370" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
-<text x="432" y="304" font-family="sans-serif" font-size="10.5" fill="#3A3A37">70 mm wheel</text>
-
-<text x="280" y="428" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#9A988F">PETG - prints as a 2-piece clamshell (split through the axis) - electronics + battery nest inside - cad/gen_chassis.py</text>
+<line x1="170" y1="46" x2="390" y2="46" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="280" y="40" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">100 mm barrel</text>
+<line x1="406" y1="60" x2="406" y2="212" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="412" y="140" font-family="sans-serif" font-size="11" fill="#3A3A37">76 mm dia</text>
+<line x1="120" y1="462" x2="440" y2="462" stroke="#9A988F" stroke-width="0.8" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="280" y="456" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#3A3A37">146 mm track</text>
 </svg>
